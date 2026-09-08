@@ -1,0 +1,26 @@
+# Зависимости
+node_modules/
+
+# Секреты — в репозиторий не попадают никогда
+.env
+.env.*
+!.env.example
+
+# Сборки
+dist/
+build/
+.next/
+*.tsbuildinfo
+admin/next-env.d.ts
+
+# Мобильное приложение
+flowfin/android/app/build/
+flowfin/android/.gradle/
+flowfin/ios/Pods/
+flowfin/ios/build/
+flowfin/.expo/
+
+# Системное
+.DS_Store
+*.log
+npm-debug.log*
