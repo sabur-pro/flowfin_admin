@@ -1,0 +1,51 @@
+# Админка деплоится отдельным compose-проектом: бэкенд живёт в своём
+# репозитории со своим compose, и трогать его не нужно.
+#
+# Запуск из каталога admin:
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Домены для Server Actions зашиваются на этапе сборки Next.
+        ADMIN_ALLOWED_ORIGINS: ${ADMIN_HOST:-admin.flowfin.intelligent.tj}
+    container_name: flowfin_admin
+    restart: unless-stopped
+    environment:
+      # Обращаемся к API по имени его контейнера внутри общей сети Docker:
+      # трафик не выходит в интернет и не шифруется повторно.
+      - API_BASE_URL=http://${API_CONTAINER:-flowfin_api}:3000
+      - SESSION_COOKIE_NAME=flowfin_admin
+      - ADMIN_ALLOWED_ORIGINS=${ADMIN_HOST:-admin.flowfin.intelligent.tj}
+      - PORT=3100
+      - NODE_ENV=production
+      # nginx-proxy разводит контейнеры по заголовку Host, поэтому у админки
+      # свой поддомен и свой сертификат, а API остаётся нетронутым.
+      - VIRTUAL_HOST=${ADMIN_HOST:-admin.flowfin.intelligent.tj}
+      - VIRTUAL_PORT=3100
+      - LETSENCRYPT_HOST=${ADMIN_HOST:-admin.flowfin.intelligent.tj}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-meoutic@gmail.com}
+    expose:
+      - "3100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3100/login || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - backend-network
+      - proxy-network
+
+networks:
+  # Обе сети созданы не здесь: backend-network поднимает compose бэкенда,
+  # proxy-network — nginx-proxy. Мы только подключаемся к ним.
+  backend-network:
+    external: true
+    name: ${BACKEND_NETWORK:-flowfin_back_backend-network}
+  proxy-network:
+    external: true
+    name: proxy-network
