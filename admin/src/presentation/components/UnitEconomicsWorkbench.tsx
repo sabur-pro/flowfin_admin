@@ -1,29 +1,37 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   buildUnitEconomicsReport,
   compareMarkets,
+  comparePlans,
 } from '@/application/use-cases';
 import {
   JURISDICTIONS,
   MARKETS,
+  PLANS,
+  PLAN_IDS,
   SALES_CHANNELS,
   annualPriceUsd,
   defaultScenario,
   inLocalCurrency,
+  voiceCostPerMonth,
+  withPlan,
   type BillingPeriod,
   type JurisdictionId,
   type MarketId,
+  type PlanId,
   type SalesChannelId,
   type Scenario,
 } from '@/domain/unit-economics';
 import { Card } from './Card';
 import { ContributionBar } from './ContributionBar';
+import { CostBreakdown } from './CostBreakdown';
 import { DataTable, type Column } from './DataTable';
 import { FieldGroup, SelectField, SliderField, ToggleField } from './Field';
 import { ProjectionChart } from './ProjectionChart';
 import { StatGrid, StatTile } from './StatTile';
+import { useStoredScenario } from '../hooks/useStoredScenario';
 import {
   groupDigits,
   months as fmtMonths,
@@ -31,9 +39,13 @@ import {
   percent,
   usd,
   usdCompact,
+  usdFine,
   usdPrecise,
 } from '../format';
-import type { MarketComparisonRow } from '@/application/use-cases';
+import type {
+  MarketComparisonRow,
+  PlanComparisonRow,
+} from '@/application/use-cases';
 
 const JURISDICTION_OPTIONS = Object.values(JURISDICTIONS).map((j) => ({
   value: j.id,
@@ -45,73 +57,85 @@ const MARKET_OPTIONS = Object.values(MARKETS).map((m) => ({
   label: m.name,
 }));
 
+const PLAN_OPTIONS = PLAN_IDS.map((id) => ({
+  value: id,
+  label: PLANS[id].name,
+}));
+
 const BILLING_OPTIONS: readonly { value: BillingPeriod; label: string }[] = [
   { value: 'monthly', label: 'Помесячно' },
   { value: 'annual', label: 'Год вперёд' },
 ];
 
 export function UnitEconomicsWorkbench() {
-  const [scenario, setScenario] = useState<Scenario>(() =>
-    defaultScenario('uae', 'usa'),
-  );
+  const { scenario, setScenario, reset } = useStoredScenario();
 
   const report = useMemo(() => buildUnitEconomicsReport(scenario), [scenario]);
   const comparison = useMemo(
-    () => compareMarkets(scenario.jurisdictionId),
-    [scenario.jurisdictionId],
+    () => compareMarkets(scenario.jurisdictionId, { planId: scenario.planId }),
+    [scenario.jurisdictionId, scenario.planId],
   );
+  const planComparison = useMemo(() => comparePlans(scenario), [scenario]);
 
   const jurisdiction = JURISDICTIONS[scenario.jurisdictionId];
   const market = MARKETS[scenario.marketId];
+  const plan = PLANS[scenario.planId];
   const { economics, projection } = report;
+
+  const patch = useCallback(
+    (next: Partial<Scenario>) =>
+      setScenario((current) => ({ ...current, ...next })),
+    [setScenario],
+  );
 
   /** Смена юрисдикции сбрасывает сценарий: у неё другие каналы и налог. */
   const changeJurisdiction = (id: JurisdictionId) =>
-    setScenario(defaultScenario(id, scenario.marketId));
+    setScenario(defaultScenario(id, scenario.marketId, scenario.planId));
 
   const changeMarket = (id: MarketId) =>
-    setScenario(defaultScenario(scenario.jurisdictionId, id));
+    setScenario(defaultScenario(scenario.jurisdictionId, id, scenario.planId));
 
-  const patch = (next: Partial<Scenario>) =>
-    setScenario((current) => ({ ...current, ...next }));
+  /** Тариф меняет цену на ориентир рынка, остальные настройки сохраняются. */
+  const changePlan = (planId: PlanId) =>
+    setScenario((current) => withPlan(current, planId));
 
   const channelOptions = jurisdiction.channels.map((id) => ({
     value: id,
     label: SALES_CHANNELS[id].name,
   }));
 
+  const isFree = economics.grossUsd === 0;
+  const voiceIfEnabled = voiceCostPerMonth(scenario.usage.voiceRequestsPerDay);
+
   return (
     <div className="workbench">
       <aside className="workbench-rail">
-        <FieldGroup title="Откуда и кому">
-          <SelectField
-            label="Юрисдикция продавца"
-            value={scenario.jurisdictionId}
-            options={JURISDICTION_OPTIONS}
-            onChange={changeJurisdiction}
-          />
-          <SelectField
-            label="Рынок покупателя"
-            value={scenario.marketId}
-            options={MARKET_OPTIONS}
-            onChange={changeMarket}
-          />
-          <SelectField
-            label="Канал продаж"
-            value={scenario.channelId}
-            options={channelOptions}
-            onChange={(channelId: SalesChannelId) => patch({ channelId })}
-          />
-        </FieldGroup>
-
         <FieldGroup title="Тариф">
+          <SelectField
+            label="Что входит в подписку"
+            value={scenario.planId}
+            options={PLAN_OPTIONS}
+            onChange={changePlan}
+          />
+          <p className="field-note">{plan.note}</p>
           <SliderField
             label="Цена в месяц"
             value={scenario.pricing.monthlyPriceUsd}
-            display={`$${scenario.pricing.monthlyPriceUsd.toFixed(2)}`}
-            min={0.99}
+            display={
+              isFree ? 'бесплатно' : `$${scenario.pricing.monthlyPriceUsd.toFixed(2)}`
+            }
+            min={0}
             max={24.99}
             step={1}
+            hint={
+              isFree
+                ? 'Free не приносит выручки — это расход на верх воронки.'
+                : `Ориентир рынка «${market.name}» — ${usdPrecise(
+                    scenario.planId === 'plus'
+                      ? market.benchmark.plusUsd
+                      : market.benchmark.proUsd,
+                  )}`
+            }
             onChange={(monthlyPriceUsd) =>
               patch({ pricing: { ...scenario.pricing, monthlyPriceUsd } })
             }
@@ -136,6 +160,27 @@ export function UnitEconomicsWorkbench() {
                 pricing: { ...scenario.pricing, annualDiscount: value / 100 },
               })
             }
+          />
+        </FieldGroup>
+
+        <FieldGroup title="Откуда и кому">
+          <SelectField
+            label="Юрисдикция продавца"
+            value={scenario.jurisdictionId}
+            options={JURISDICTION_OPTIONS}
+            onChange={changeJurisdiction}
+          />
+          <SelectField
+            label="Рынок покупателя"
+            value={scenario.marketId}
+            options={MARKET_OPTIONS}
+            onChange={changeMarket}
+          />
+          <SelectField
+            label="Канал продаж"
+            value={scenario.channelId}
+            options={channelOptions}
+            onChange={(channelId: SalesChannelId) => patch({ channelId })}
           />
         </FieldGroup>
 
@@ -166,12 +211,23 @@ export function UnitEconomicsWorkbench() {
             value={scenario.usage.voiceRequestsPerDay}
             display={
               scenario.usage.voiceRequestsPerDay === 0
-                ? 'без ИИ'
+                ? 'не пользуется'
                 : `${scenario.usage.voiceRequestsPerDay}/день`
             }
             min={0}
             max={40}
             step={1}
+            hint={
+              plan.features.aiVoice
+                ? `${usdFine(economics.variableCost.aiUsd)}/мес на подписчика · ${usdFine(
+                    economics.variableCost.aiUsd * 12,
+                  )}/год${
+                    economics.grossUsd > 0
+                      ? ` · ${percent(economics.variableCost.aiUsd / economics.grossUsd, 1)} от чека`
+                      : ''
+                  }`
+                : `Тариф без ИИ: не тарифицируется. Включить стоило бы ${usdFine(voiceIfEnabled)}/мес`
+            }
             onChange={(voiceRequestsPerDay) =>
               patch({ usage: { ...scenario.usage, voiceRequestsPerDay } })
             }
@@ -183,6 +239,7 @@ export function UnitEconomicsWorkbench() {
             min={1}
             max={15}
             step={0.5}
+            hint={`Срок жизни ${economics.expectedLifetimeMonths.toFixed(0)} мес`}
             onChange={(value) =>
               patch({ usage: { ...scenario.usage, churnMonthly: value / 100 } })
             }
@@ -191,7 +248,7 @@ export function UnitEconomicsWorkbench() {
 
         <FieldGroup title="Рост и расходы">
           <SliderField
-            label="Новых платящих в 1-й месяц"
+            label={isFree ? 'Новых пользователей в 1-й месяц' : 'Новых платящих в 1-й месяц'}
             value={scenario.growth.firstMonthPayingUsers}
             display={groupDigits(scenario.growth.firstMonthPayingUsers)}
             min={25}
@@ -213,7 +270,7 @@ export function UnitEconomicsWorkbench() {
             }
           />
           <SliderField
-            label="CAC — цена платящего"
+            label={isFree ? 'CAC — цена установки' : 'CAC — цена платящего'}
             value={scenario.growth.cacUsd}
             display={usd(scenario.growth.cacUsd)}
             min={0}
@@ -233,25 +290,51 @@ export function UnitEconomicsWorkbench() {
             }
           />
         </FieldGroup>
+
+        <div className="rail-footer">
+          <span className="rail-state">Настройки сохраняются в браузере</span>
+          <button type="button" className="ghost" onClick={reset}>
+            Сбросить
+          </button>
+        </div>
       </aside>
 
       <div className="workbench-canvas">
         <StatGrid>
           <StatTile
-            label="Маржа с подписчика"
-            value={usdPrecise(economics.contributionUsd)}
-            hint={`${percent(economics.contributionRate, 0)} от чека, до маркетинга и налога`}
-            tone={economics.contributionUsd > 0 ? 'neutral' : 'loss'}
+            label={isFree ? 'Стоит в месяц' : 'Маржа с подписчика'}
+            value={
+              isFree
+                ? usdFine(economics.variableCost.totalUsd)
+                : usdPrecise(economics.contributionUsd)
+            }
+            hint={
+              isFree
+                ? 'Себестоимость бесплатного пользователя — считается как убыток'
+                : `${percent(economics.contributionRate, 0)} от чека, до маркетинга и налога`
+            }
+            tone={!isFree && economics.contributionUsd > 0 ? 'neutral' : 'loss'}
           />
           <StatTile
             label="LTV"
-            value={usd(economics.ltvUsd)}
+            value={
+              Math.abs(economics.ltvUsd) < 10
+                ? usdFine(economics.ltvUsd)
+                : usd(economics.ltvUsd)
+            }
             hint={`срок жизни ${economics.expectedLifetimeMonths.toFixed(0)} мес при оттоке ${percent(economics.effectiveChurn)}`}
+            tone={economics.ltvUsd >= 0 ? 'neutral' : 'loss'}
           />
           <StatTile
             label="Окупаемость CAC"
             value={fmtMonths(economics.cacPaybackMonths)}
-            hint={`LTV / CAC = ${multiple(economics.ltvToCac)}${economics.ltvToCac >= 3 ? ' — здоровая экономика' : ' — ниже порога 3×'}`}
+            hint={
+              isFree
+                ? 'Free не окупает привлечение сам — только через конверсию в платный'
+                : economics.contributionUsd <= 0
+                  ? 'Маржа отрицательная: привлечение не окупится ни за какой срок'
+                  : `LTV / CAC = ${multiple(economics.ltvToCac)}${economics.ltvToCac >= 3 ? ' — здоровая экономика' : ' — ниже порога 3×'}`
+            }
             tone={
               economics.cacPaybackMonths <= 12
                 ? 'good'
@@ -271,20 +354,71 @@ export function UnitEconomicsWorkbench() {
         <Card
           title="Куда уходит каждый доллар"
           description={
-            scenario.pricing.billingPeriod === 'annual'
-              ? `Годовая цена ${usdPrecise(annualPriceUsd(scenario.pricing))} разложена на месяц. Фикс-комиссия списывается раз в год.`
-              : `Помесячная оплата ${usdPrecise(scenario.pricing.monthlyPriceUsd)}. Фикс-комиссия канала списывается каждый месяц.`
+            isFree
+              ? `Тариф «${plan.shortName}» не приносит выручки: раскладывать нечего, есть только расход.`
+              : scenario.pricing.billingPeriod === 'annual'
+                ? `Годовая цена ${usdPrecise(annualPriceUsd(scenario.pricing))} разложена на месяц. Фикс-комиссия списывается раз в год.`
+                : `Помесячная оплата ${usdPrecise(scenario.pricing.monthlyPriceUsd)}. Фикс-комиссия канала списывается каждый месяц.`
           }
         >
-          <ContributionBar economics={economics} />
-          <p className="note">
-            В валюте рынка это{' '}
-            <strong>
-              {inLocalCurrency(market, economics.grossUsd).toFixed(2)}{' '}
-              {market.currency}
-            </strong>{' '}
-            в месяц. {market.note}
-          </p>
+          {isFree ? (
+            <p className="note">
+              Бесплатный пользователь обходится в{' '}
+              <strong>{usdFine(economics.variableCost.totalUsd)} в месяц</strong>{' '}
+              — это цена держать его в базе, пока он не перешёл на платный тариф.
+              При CAC {usd(scenario.growth.cacUsd)} и сроке жизни{' '}
+              {economics.expectedLifetimeMonths.toFixed(0)} мес каждый такой
+              пользователь стоит{' '}
+              {usdFine(
+                scenario.growth.cacUsd +
+                  economics.variableCost.totalUsd *
+                    economics.expectedLifetimeMonths,
+              )}
+              . Оправдать его может только конверсия в Plus или Pro.
+            </p>
+          ) : (
+            <>
+              <ContributionBar economics={economics} />
+              <p className="note">
+                В валюте рынка это{' '}
+                <strong>
+                  {inLocalCurrency(market, economics.grossUsd).toFixed(2)}{' '}
+                  {market.currency}
+                </strong>{' '}
+                в месяц. {market.note}
+              </p>
+            </>
+          )}
+        </Card>
+
+        <Card
+          title="Себестоимость обслуживания"
+          description={`Что тратится на одного активного пользователя тарифа «${plan.shortName}» каждый месяц. Голосовые запросы попадают сюда, только если ИИ входит в тариф.`}
+        >
+          <CostBreakdown
+            economics={economics}
+            plan={plan}
+            voiceRequestsPerDay={scenario.usage.voiceRequestsPerDay}
+          />
+        </Card>
+
+        <Card
+          title="Тарифы при этих настройках"
+          description={`Один и тот же рынок, канал и поведение пользователя — меняются только цена и набор фич. Отток везде ${percent(scenario.usage.churnMonthly)}: разделить его по тарифам можно будет, когда наберётся своя статистика.`}
+        >
+          <DataTable
+            columns={planColumns}
+            rows={planComparison}
+            rowKey={(row) => row.plan.id}
+            highlight={(row) => row.plan.id === scenario.planId}
+          />
+          <ul className="notes-list">
+            {PLAN_IDS.map((id) => (
+              <li key={id}>
+                <strong>{PLANS[id].shortName}.</strong> {PLANS[id].note}
+              </li>
+            ))}
+          </ul>
         </Card>
 
         <Card
@@ -300,7 +434,7 @@ export function UnitEconomicsWorkbench() {
 
         <Card
           title="Все рынки при этой юрисдикции"
-          description={`Продажа из «${jurisdiction.name}» по цене, к которой привык каждый рынок. Видно, что экономику определяет не себестоимость, а цена и стоимость привлечения.`}
+          description={`Продажа из «${jurisdiction.name}» на тарифе «${plan.shortName}» по цене, к которой привык каждый рынок. Видно, что экономику определяет не себестоимость, а цена и стоимость привлечения.`}
         >
           <DataTable
             columns={marketColumns}
@@ -330,6 +464,56 @@ export function UnitEconomicsWorkbench() {
     </div>
   );
 }
+
+const planColumns: readonly Column<PlanComparisonRow>[] = [
+  {
+    key: 'plan',
+    header: 'Тариф',
+    align: 'left',
+    render: (r) => r.plan.shortName,
+  },
+  {
+    key: 'price',
+    header: 'Цена',
+    render: (r) =>
+      r.report.economics.grossUsd > 0
+        ? usdPrecise(r.report.economics.grossUsd)
+        : '—',
+  },
+  {
+    key: 'cost',
+    header: 'Себестоимость',
+    render: (r) => usdFine(r.report.economics.variableCostUsd),
+  },
+  {
+    key: 'ai',
+    header: 'из них ИИ',
+    render: (r) =>
+      r.plan.features.aiVoice
+        ? usdFine(r.report.economics.variableCost.aiUsd)
+        : '—',
+  },
+  {
+    key: 'contribution',
+    header: 'Маржа/мес',
+    render: (r) => usdFine(r.report.economics.contributionUsd),
+  },
+  {
+    key: 'ltv',
+    header: 'LTV',
+    render: (r) => usdFine(r.report.economics.ltvUsd),
+  },
+  {
+    key: 'payback',
+    header: 'Окупаемость',
+    render: (r) => fmtMonths(r.report.economics.cacPaybackMonths),
+  },
+  {
+    key: 'ltvcac',
+    header: 'LTV / CAC',
+    render: (r) => multiple(r.report.economics.ltvToCac),
+  },
+];
 
 const marketColumns: readonly Column<MarketComparisonRow>[] = [
   { key: 'market', header: 'Рынок', align: 'left', render: (r) => r.market.name },

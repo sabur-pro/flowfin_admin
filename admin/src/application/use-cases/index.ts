@@ -2,6 +2,8 @@ export { buildUnitEconomicsReport } from './build-unit-economics-report';
 export type { UnitEconomicsReport } from './build-unit-economics-report';
 export { compareJurisdictions, compareMarkets } from './compare-markets';
 export type { MarketComparisonRow } from './compare-markets';
+export { comparePlans } from './compare-plans';
+export type { PlanComparisonRow } from './compare-plans';
 export { loadDashboard } from './load-dashboard';
 export type { Dashboard } from './load-dashboard';
 export { listUsers, pageCount, USERS_PER_PAGE } from './list-users';

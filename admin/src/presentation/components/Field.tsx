@@ -9,6 +9,8 @@ interface SliderFieldProps {
   readonly min: number;
   readonly max: number;
   readonly step: number;
+  /** Строка под ползунком: обычно во что настройка обходится в деньгах. */
+  readonly hint?: string;
   readonly onChange: (value: number) => void;
 }
 
@@ -19,6 +21,7 @@ export function SliderField({
   min,
   max,
   step,
+  hint,
   onChange,
 }: SliderFieldProps) {
   const id = `slider-${label}`;
@@ -37,6 +40,7 @@ export function SliderField({
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
+      {hint && <span className="field-hint">{hint}</span>}
     </div>
   );
 }

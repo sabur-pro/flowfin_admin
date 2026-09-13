@@ -1,4 +1,5 @@
 import type { Rate, Usd } from '../shared/types';
+import type { PlanId } from './plan';
 
 export type MarketId = 'tajikistan' | 'cis' | 'europe' | 'usa' | 'gulf';
 
@@ -14,7 +15,7 @@ export interface Market {
   readonly unitsPerUsd: number;
   /** НДС или его аналог, включённый в цену для потребителя. */
   readonly consumptionTaxRate: Rate;
-  /** Ориентир цены, к которому привык рынок. */
+  /** Ориентир цены по тарифам, к которому привык рынок. Free везде нулевой. */
   readonly benchmark: { readonly plusUsd: Usd; readonly proUsd: Usd };
   readonly churnMonthly: Rate;
   readonly cacUsd: Usd;
@@ -88,4 +89,16 @@ export const MARKETS: Readonly<Record<MarketId, Market>> = {
 /** Цена в валюте рынка — только для подписи, расчёт всегда в долларах. */
 export function inLocalCurrency(market: Market, usd: Usd): number {
   return usd * market.unitsPerUsd;
+}
+
+/** Цена тарифа, к которой привык рынок. Free не стоит ничего по определению. */
+export function benchmarkPriceUsd(market: Market, planId: PlanId): Usd {
+  switch (planId) {
+    case 'free':
+      return 0;
+    case 'plus':
+      return market.benchmark.plusUsd;
+    case 'pro':
+      return market.benchmark.proUsd;
+  }
 }

@@ -5,6 +5,7 @@ import {
   type JurisdictionId,
   type Market,
   type MarketId,
+  type PlanId,
   type Scenario,
 } from '@/domain/unit-economics';
 import {
@@ -27,10 +28,10 @@ export interface MarketComparisonRow {
  */
 export function compareMarkets(
   jurisdictionId: JurisdictionId,
-  options: { readonly fixedPriceUsd?: number } = {},
+  options: { readonly fixedPriceUsd?: number; readonly planId?: PlanId } = {},
 ): readonly MarketComparisonRow[] {
   return marketIds().map((marketId) => {
-    const base = defaultScenario(jurisdictionId, marketId);
+    const base = defaultScenario(jurisdictionId, marketId, options.planId);
     const scenario = options.fixedPriceUsd
       ? withPrice(base, options.fixedPriceUsd)
       : base;

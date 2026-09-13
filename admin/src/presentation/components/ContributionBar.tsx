@@ -20,7 +20,7 @@ export function ContributionBar({
     { key: 'margin', label: 'Маржа', value: Math.max(economics.contributionUsd, 0) },
     { key: 'channel', label: 'Комиссия канала', value: economics.channelFeeUsd },
     { key: 'tax', label: 'Налог с продажи', value: economics.consumptionTaxUsd },
-    { key: 'cost', label: 'ИИ и сервер', value: economics.variableCostUsd },
+    { key: 'cost', label: costLabel(economics), value: economics.variableCostUsd },
   ];
 
   const total = economics.grossUsd > 0 ? economics.grossUsd : 1;
@@ -55,4 +55,11 @@ export function ContributionBar({
       </ul>
     </div>
   );
+}
+
+/** Подпись себестоимости честно перечисляет то, что в тарифе действительно есть. */
+function costLabel(economics: SubscriberEconomics): string {
+  const { aiUsd, syncUsd } = economics.variableCost;
+  if (aiUsd > 0) return 'ИИ и сервер';
+  return syncUsd > 0 ? 'Сервер и хранение' : 'Учётная запись';
 }

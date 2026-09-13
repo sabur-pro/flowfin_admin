@@ -1,9 +1,10 @@
 import type { Rate, Usd } from '../shared/types';
-import { monthlyVariableCost, type CostModel } from './cost-model';
+import { variableCostFor, type CostModel, type VariableCost } from './cost-model';
 import { SALES_CHANNELS, channelFeeFor } from './sales-channel';
 import {
   effectiveChurn,
   grossMonthlyUsd,
+  planFeatures,
   transactionsPerMonth,
   type Scenario,
 } from './scenario';
@@ -14,6 +15,8 @@ export interface SubscriberEconomics {
   readonly consumptionTaxUsd: Usd;
   readonly channelFeeUsd: Usd;
   readonly variableCostUsd: Usd;
+  /** Из чего сложилась себестоимость: учётка, синхронизация, ИИ. */
+  readonly variableCost: VariableCost;
   /** Что остаётся до маркетинга, постоянных расходов и налога на прибыль. */
   readonly contributionUsd: Usd;
   readonly contributionRate: Rate;
@@ -36,19 +39,25 @@ export function calculateSubscriberEconomics(
   const netOfTax = gross / (1 + scenario.consumptionTaxRate);
   const consumptionTax = gross - netOfTax;
 
-  const channelFee = channelFeeFor(
-    SALES_CHANNELS[scenario.channelId],
-    gross,
-    netOfTax,
-    transactionsPerMonth(scenario.pricing),
-  );
+  // Бесплатный тариф не проходит через канал продаж: списывать не с чего,
+  // и фикс-комиссия процессинга не должна превращаться в фантомный расход.
+  const channelFee =
+    gross > 0
+      ? channelFeeFor(
+          SALES_CHANNELS[scenario.channelId],
+          gross,
+          netOfTax,
+          transactionsPerMonth(scenario.pricing),
+        )
+      : 0;
 
-  const variableCost = monthlyVariableCost(
+  const variableCost = variableCostFor(
+    planFeatures(scenario),
     scenario.usage.voiceRequestsPerDay,
     costs,
   );
 
-  const contribution = gross - consumptionTax - channelFee - variableCost;
+  const contribution = gross - consumptionTax - channelFee - variableCost.totalUsd;
   const churn = effectiveChurn(scenario);
   const lifetime = Math.min(1 / churn, MAX_LIFETIME_MONTHS);
   const ltv = contribution * lifetime;
@@ -58,7 +67,8 @@ export function calculateSubscriberEconomics(
     grossUsd: gross,
     consumptionTaxUsd: consumptionTax,
     channelFeeUsd: channelFee,
-    variableCostUsd: variableCost,
+    variableCostUsd: variableCost.totalUsd,
+    variableCost,
     contributionUsd: contribution,
     contributionRate: gross > 0 ? contribution / gross : 0,
     effectiveChurn: churn,

@@ -1,6 +1,7 @@
 import type { Rate, Usd } from '../shared/types';
 import { JURISDICTIONS, type JurisdictionId } from './jurisdiction';
-import { MARKETS, type MarketId } from './market';
+import { MARKETS, benchmarkPriceUsd, type MarketId } from './market';
+import { PLANS, type PlanFeatures, type PlanId } from './plan';
 import type { SalesChannelId } from './sales-channel';
 
 export type BillingPeriod = 'monthly' | 'annual';
@@ -13,6 +14,11 @@ export interface Pricing {
 }
 
 export interface Usage {
+  /**
+   * Сколько голосовых разборов делает активный пользователь. Величина
+   * поведенческая, а не тарифная: на тарифе без ИИ она остаётся, но не
+   * тарифицируется — так видно, во что обошёлся бы ИИ, если его включить.
+   */
   readonly voiceRequestsPerDay: number;
   readonly churnMonthly: Rate;
 }
@@ -28,6 +34,7 @@ export interface Scenario {
   readonly jurisdictionId: JurisdictionId;
   readonly marketId: MarketId;
   readonly channelId: SalesChannelId;
+  readonly planId: PlanId;
   readonly pricing: Pricing;
   readonly usage: Usage;
   readonly growth: Growth;
@@ -53,6 +60,10 @@ export function transactionsPerMonth(pricing: Pricing): number {
   return pricing.billingPeriod === 'annual' ? 1 / 12 : 1;
 }
 
+export function planFeatures(scenario: Scenario): PlanFeatures {
+  return PLANS[scenario.planId].features;
+}
+
 /**
  * Годовые подписчики уходят кратно реже помесячных: решение об отказе они
  * принимают раз в год, а не двенадцать раз. Коэффициент — консервативная треть.
@@ -68,11 +79,13 @@ export function effectiveChurn(scenario: Scenario): Rate {
 
 /**
  * Сценарий по умолчанию для пары «откуда продаём — кому продаём». Канал берётся
- * первый доступный в юрисдикции, цена и отток — из ориентиров рынка.
+ * первый доступный в юрисдикции, цена — ориентир рынка для выбранного тарифа,
+ * отток и активность — из ориентиров рынка.
  */
 export function defaultScenario(
   jurisdictionId: JurisdictionId,
   marketId: MarketId,
+  planId: PlanId = 'pro',
 ): Scenario {
   const jurisdiction = JURISDICTIONS[jurisdictionId];
   const market = MARKETS[marketId];
@@ -81,8 +94,9 @@ export function defaultScenario(
     jurisdictionId,
     marketId,
     channelId: jurisdiction.channels[0],
+    planId,
     pricing: {
-      monthlyPriceUsd: market.benchmark.proUsd,
+      monthlyPriceUsd: benchmarkPriceUsd(market, planId),
       billingPeriod: 'monthly',
       annualDiscount: 0.33,
     },
@@ -98,6 +112,22 @@ export function defaultScenario(
     },
     corporateTaxRate: jurisdiction.corporateTaxRate,
     consumptionTaxRate: market.consumptionTaxRate,
+  };
+}
+
+/**
+ * Смена тарифа тянет за собой цену: у каждого тарифа свой ориентир рынка,
+ * а Free по определению бесплатен. Всё остальное — канал, налоги, отток,
+ * стоимость привлечения — остаётся как настроили, иначе тарифы не сравнить.
+ */
+export function withPlan(scenario: Scenario, planId: PlanId): Scenario {
+  return {
+    ...scenario,
+    planId,
+    pricing: {
+      ...scenario.pricing,
+      monthlyPriceUsd: benchmarkPriceUsd(MARKETS[scenario.marketId], planId),
+    },
   };
 }
 

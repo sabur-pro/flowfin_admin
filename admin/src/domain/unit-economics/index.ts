@@ -1,11 +1,19 @@
-export { DEFAULT_COST_MODEL, monthlyVariableCost } from './cost-model';
-export type { CostModel } from './cost-model';
+export {
+  DAYS_PER_MONTH,
+  DEFAULT_COST_MODEL,
+  variableCostFor,
+  voiceCostPerMonth,
+} from './cost-model';
+export type { CostModel, VariableCost } from './cost-model';
 
 export { JURISDICTIONS } from './jurisdiction';
 export type { Jurisdiction, JurisdictionId } from './jurisdiction';
 
-export { MARKETS, inLocalCurrency } from './market';
+export { MARKETS, benchmarkPriceUsd, inLocalCurrency } from './market';
 export type { Market, MarketId } from './market';
+
+export { PLANS, PLAN_IDS, isPlanId } from './plan';
+export type { Plan, PlanFeatures, PlanId } from './plan';
 
 export { SALES_CHANNELS, channelFeeFor } from './sales-channel';
 export type { ChannelFee, SalesChannel, SalesChannelId } from './sales-channel';
@@ -16,7 +24,9 @@ export {
   effectiveChurn,
   grossMonthlyUsd,
   isChannelAvailable,
+  planFeatures,
   transactionsPerMonth,
+  withPlan,
 } from './scenario';
 export type {
   BillingPeriod,
@@ -25,6 +35,8 @@ export type {
   Scenario,
   Usage,
 } from './scenario';
+
+export { parseScenario } from './scenario-codec';
 
 export { calculateSubscriberEconomics } from './subscriber-economics';
 export type { SubscriberEconomics } from './subscriber-economics';
