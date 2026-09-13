@@ -765,3 +765,12 @@ button.ghost {
   border-top: 1px solid var(--rule);
   border-bottom: 0;
 }
+
+.rail-footer {
+  flex-wrap: wrap;
+}
+
+.rail-actions {
+  display: flex;
+  gap: 6px;
+}

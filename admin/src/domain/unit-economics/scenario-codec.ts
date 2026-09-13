@@ -3,6 +3,27 @@ import { MARKETS, type MarketId } from './market';
 import { isPlanId } from './plan';
 import { SALES_CHANNELS, type SalesChannelId } from './sales-channel';
 import type { BillingPeriod, Scenario } from './scenario';
+import { keyOf, type Workspace } from './workspace';
+
+/**
+ * Разбор рабочего набора: словарь сценариев по комбинациям плюс активная.
+ * Запись, которая не соответствует собственному ключу, выбрасывается целиком —
+ * такой сценарий подсунули бы не тому рынку, а это хуже потери настроек.
+ */
+export function parseWorkspace(raw: unknown): Workspace | null {
+  if (!isRecord(raw) || !isRecord(raw.scenarios)) return null;
+
+  const scenarios: Record<string, Scenario> = {};
+  for (const [key, value] of Object.entries(raw.scenarios)) {
+    const scenario = parseScenario(value);
+    if (scenario && keyOf(scenario) === key) scenarios[key] = scenario;
+  }
+
+  const activeKey = typeof raw.activeKey === 'string' ? raw.activeKey : null;
+  if (!activeKey || !scenarios[activeKey]) return null;
+
+  return { activeKey, scenarios };
+}
 
 /**
  * Разбор сценария, пришедшего снаружи — из localStorage или ссылки. Данные

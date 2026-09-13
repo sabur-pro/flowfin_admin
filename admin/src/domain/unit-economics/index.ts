@@ -36,7 +36,18 @@ export type {
   Usage,
 } from './scenario';
 
-export { parseScenario } from './scenario-codec';
+export { parseScenario, parseWorkspace } from './scenario-codec';
+
+export {
+  activeScenario,
+  createWorkspace,
+  keyOf,
+  resetActive,
+  scenarioKey,
+  switchTo,
+  updateActive,
+} from './workspace';
+export type { ScenarioKey, ScenarioTarget, Workspace } from './workspace';
 
 export { calculateSubscriberEconomics } from './subscriber-economics';
 export type { SubscriberEconomics } from './subscriber-economics';

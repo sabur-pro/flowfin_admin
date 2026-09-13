@@ -13,10 +13,8 @@ import {
   PLAN_IDS,
   SALES_CHANNELS,
   annualPriceUsd,
-  defaultScenario,
   inLocalCurrency,
   voiceCostPerMonth,
-  withPlan,
   type BillingPeriod,
   type JurisdictionId,
   type MarketId,
@@ -31,7 +29,7 @@ import { DataTable, type Column } from './DataTable';
 import { FieldGroup, SelectField, SliderField, ToggleField } from './Field';
 import { ProjectionChart } from './ProjectionChart';
 import { StatGrid, StatTile } from './StatTile';
-import { useStoredScenario } from '../hooks/useStoredScenario';
+import { useScenarioWorkspace } from '../hooks/useScenarioWorkspace';
 import {
   groupDigits,
   months as fmtMonths,
@@ -68,7 +66,8 @@ const BILLING_OPTIONS: readonly { value: BillingPeriod; label: string }[] = [
 ];
 
 export function UnitEconomicsWorkbench() {
-  const { scenario, setScenario, reset } = useStoredScenario();
+  const { scenario, setScenario, select, reset, resetAll, configuredCount } =
+    useScenarioWorkspace();
 
   const report = useMemo(() => buildUnitEconomicsReport(scenario), [scenario]);
   const comparison = useMemo(
@@ -88,16 +87,14 @@ export function UnitEconomicsWorkbench() {
     [setScenario],
   );
 
-  /** Смена юрисдикции сбрасывает сценарий: у неё другие каналы и налог. */
-  const changeJurisdiction = (id: JurisdictionId) =>
-    setScenario(defaultScenario(id, scenario.marketId, scenario.planId));
+  // Селекторы не пересобирают сценарий, а переходят к сценарию другой
+  // комбинации: настроенное для США остаётся у США, даже если сходить в Европу.
+  const changeJurisdiction = (jurisdictionId: JurisdictionId) =>
+    select({ jurisdictionId });
 
-  const changeMarket = (id: MarketId) =>
-    setScenario(defaultScenario(scenario.jurisdictionId, id, scenario.planId));
+  const changeMarket = (marketId: MarketId) => select({ marketId });
 
-  /** Тариф меняет цену на ориентир рынка, остальные настройки сохраняются. */
-  const changePlan = (planId: PlanId) =>
-    setScenario((current) => withPlan(current, planId));
+  const changePlan = (planId: PlanId) => select({ planId });
 
   const channelOptions = jurisdiction.channels.map((id) => ({
     value: id,
@@ -292,10 +289,18 @@ export function UnitEconomicsWorkbench() {
         </FieldGroup>
 
         <div className="rail-footer">
-          <span className="rail-state">Настройки сохраняются в браузере</span>
-          <button type="button" className="ghost" onClick={reset}>
-            Сбросить
-          </button>
+          <span className="rail-state">
+            Настройки помнятся отдельно для каждой пары «рынок × тариф» и
+            переживают перезагрузку. Настроено комбинаций: {configuredCount}.
+          </span>
+          <div className="rail-actions">
+            <button type="button" className="ghost" onClick={reset}>
+              Сбросить рынок
+            </button>
+            <button type="button" className="ghost" onClick={resetAll}>
+              Всё
+            </button>
+          </div>
         </div>
       </aside>
 
