@@ -1,5 +1,5 @@
 import { averagePaymentTjs, type FinanceSummary } from '@/domain/finance';
-import { requireAdminContext } from '@/infrastructure/container';
+import { requireAdminContext, withSession } from '@/infrastructure/container';
 import { Card } from '@/presentation/components/Card';
 import { DataTable, type Column } from '@/presentation/components/DataTable';
 import { StatGrid, StatTile } from '@/presentation/components/StatTile';
@@ -9,7 +9,7 @@ const RANGE_DAYS = 90;
 
 export default async function FinancePage() {
   const { gateway } = await requireAdminContext();
-  const finance = await gateway.getFinanceSummary(RANGE_DAYS);
+  const finance = await withSession(() => gateway.getFinanceSummary(RANGE_DAYS));
 
   return (
     <>

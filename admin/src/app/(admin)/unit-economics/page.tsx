@@ -1,12 +1,12 @@
 import { loadSavedWorkspace } from '@/application/use-cases';
-import { requireAdminContext } from '@/infrastructure/container';
+import { requireAdminContext, withSession } from '@/infrastructure/container';
 import { UnitEconomicsWorkbench } from '@/presentation/components/UnitEconomicsWorkbench';
 
 export default async function UnitEconomicsPage() {
   const { gateway } = await requireAdminContext();
   // Сохранённая модель приходит с сервера: новый браузер и новый админ
   // открывают ту же картину, а не заводские ориентиры.
-  const saved = await loadSavedWorkspace(gateway);
+  const saved = await withSession(() => loadSavedWorkspace(gateway));
 
   return (
     <>

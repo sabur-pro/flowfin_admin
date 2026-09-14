@@ -794,3 +794,28 @@ button.ghost {
   line-height: 1.4;
   color: var(--loss);
 }
+
+/* ── Экран отказа API ────────────────────────────────────── */
+.failure {
+  max-width: 560px;
+  padding: 28px 0;
+}
+
+.failure-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ghost-link {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.failure code {
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: var(--panel-sunk);
+  font-size: 0.9em;
+}

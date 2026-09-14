@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { listUsers, pageCount } from '@/application/use-cases';
 import type { UserFilter } from '@/application/ports';
-import { requireAdminContext } from '@/infrastructure/container';
+import { requireAdminContext, withSession } from '@/infrastructure/container';
 import { AccessBadge } from '@/presentation/components/Badge';
 import { Card } from '@/presentation/components/Card';
 import { DataTable, type Column } from '@/presentation/components/DataTable';
@@ -27,7 +27,9 @@ export default async function UsersPage({ searchParams }: PageProps) {
   const page = Number(params.page ?? '1');
 
   const { gateway } = await requireAdminContext();
-  const result = await listUsers(gateway, { query, filter, page });
+  const result = await withSession(() =>
+    listUsers(gateway, { query, filter, page }),
+  );
   const pages = pageCount(result);
 
   return (

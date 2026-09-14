@@ -1,6 +1,6 @@
 import { loadDashboard } from '@/application/use-cases';
 import { averagePaymentTjs } from '@/domain/finance';
-import { requireAdminContext } from '@/infrastructure/container';
+import { requireAdminContext, withSession } from '@/infrastructure/container';
 import { Card } from '@/presentation/components/Card';
 import { DataTable, type Column } from '@/presentation/components/DataTable';
 import { StatGrid, StatTile } from '@/presentation/components/StatTile';
@@ -9,7 +9,7 @@ import type { UserOverview } from '@/domain/users';
 
 export default async function OverviewPage() {
   const { gateway } = await requireAdminContext();
-  const { overview, finance } = await loadDashboard(gateway);
+  const { overview, finance } = await withSession(() => loadDashboard(gateway));
 
   const paying = overview.access.subscribed;
   const conversion = overview.users.total > 0 ? paying / overview.users.total : 0;

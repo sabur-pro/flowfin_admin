@@ -15,8 +15,12 @@ export interface SavedWorkspace {
 }
 
 /**
- * Загрузка не должна ронять страницу: недоступный API или устаревший формат —
- * это повод показать заводские настройки, а не пустой экран.
+ * Загрузка не должна ронять страницу: недоступный API, отсутствующий пока
+ * эндпоинт или устаревший формат — это повод показать заводские настройки,
+ * а не пустой экран.
+ *
+ * Исключение — протухшая сессия: её нельзя проглотить, иначе человек
+ * останется на странице, где ничего не сохраняется, вместо формы входа.
  */
 export async function loadSavedWorkspace(
   gateway: AdminGateway,
@@ -28,9 +32,19 @@ export async function loadSavedWorkspace(
       updatedAt: record.updatedAt,
       updatedByEmail: record.updatedByEmail,
     };
-  } catch {
+  } catch (cause) {
+    if (isUnauthorized(cause)) throw cause;
     return { workspace: null, updatedAt: null, updatedByEmail: null };
   }
+}
+
+/** 401 и 403 от API: транспорт сюда не протаскиваем, хватает признака. */
+function isUnauthorized(cause: unknown): boolean {
+  if (typeof cause !== 'object' || cause === null || !('status' in cause)) {
+    return false;
+  }
+  const { status } = cause as { status: number };
+  return status === 401 || status === 403;
 }
 
 /**

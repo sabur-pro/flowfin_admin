@@ -1,7 +1,8 @@
 'use server';
 
+import { unstable_rethrow as rethrowNextControl } from 'next/navigation';
 import { saveWorkspace, type SavedWorkspace } from '@/application/use-cases';
-import { requireAdminContext } from '@/infrastructure/container';
+import { requireAdminContext, withSession } from '@/infrastructure/container';
 
 export type SaveResult =
   | { readonly ok: true; readonly saved: SavedWorkspace }
@@ -15,8 +16,13 @@ export async function saveWorkspaceAction(raw: unknown): Promise<SaveResult> {
   const { gateway } = await requireAdminContext();
 
   try {
-    return { ok: true, saved: await saveWorkspace(gateway, raw) };
+    const saved = await withSession(() => saveWorkspace(gateway, raw));
+    return { ok: true, saved };
   } catch (cause) {
+    // Редирект на форму входа Next тоже бросает исключением: проглотить его
+    // здесь значит показать «ошибку сохранения» вместо перехода на /login.
+    rethrowNextControl(cause);
+
     return {
       ok: false,
       error:

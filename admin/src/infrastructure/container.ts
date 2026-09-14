@@ -4,6 +4,7 @@ import type { AdminGateway, AuthGateway } from '@/application/ports';
 import { AdminApiGateway } from './http/admin-api.gateway';
 import { AuthApiGateway } from './http/auth-api.gateway';
 import { HttpClient } from './http/http-client';
+import { ApiError } from './http/api-error';
 import { readSession, type AdminSession } from './session/session';
 
 /**
@@ -29,4 +30,24 @@ export async function requireAdminContext(): Promise<AdminContext> {
   if (!session) redirect('/login');
 
   return { session, gateway: adminGateway(session.accessToken) };
+}
+
+/**
+ * Запрос к API от имени админа. Токен живёт 12 часов и отзывается, когда тот
+ * же аккаунт входит с другого устройства, — то есть протухшая сессия это
+ * обычное дело, а не сбой. Без этой обёртки 401 всплывает как необработанное
+ * исключение, и вместо формы входа человек видит «A server error occurred».
+ */
+export async function withSession<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (cause) {
+    if (cause instanceof ApiError && cause.isUnauthorized) {
+      // Кука бесполезна: с этим токеном API больше не разговаривает. Удалить
+      // её отсюда нельзя — страницы не вправе менять куки, этим занимается
+      // /session-expired, туда и уходим.
+      redirect('/session-expired');
+    }
+    throw cause;
+  }
 }
