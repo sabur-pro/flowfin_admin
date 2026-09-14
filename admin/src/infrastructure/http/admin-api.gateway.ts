@@ -1,5 +1,7 @@
 import type {
   AdminGateway,
+  AdminSettingKey,
+  AdminSettingRecord,
   ListUsersQuery,
   Page,
 } from '@/application/ports';
@@ -26,5 +28,15 @@ export class AdminApiGateway implements AdminGateway {
 
   getFinanceSummary(days: number): Promise<FinanceSummary> {
     return this.http.get<FinanceSummary>('/api/admin/finance/summary', { days });
+  }
+
+  getSetting(key: AdminSettingKey): Promise<AdminSettingRecord> {
+    return this.http.get<AdminSettingRecord>(`/api/admin/settings/${key}`);
+  }
+
+  saveSetting(key: AdminSettingKey, value: unknown): Promise<AdminSettingRecord> {
+    return this.http.post<AdminSettingRecord>(`/api/admin/settings/${key}`, {
+      value,
+    });
   }
 }

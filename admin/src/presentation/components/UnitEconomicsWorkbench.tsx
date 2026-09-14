@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import {
   buildUnitEconomicsReport,
   compareMarkets,
@@ -15,6 +15,7 @@ import {
   annualPriceUsd,
   inLocalCurrency,
   voiceCostPerMonth,
+  workspaceFingerprint,
   type BillingPeriod,
   type JurisdictionId,
   type MarketId,
@@ -29,7 +30,12 @@ import { DataTable, type Column } from './DataTable';
 import { FieldGroup, SelectField, SliderField, ToggleField } from './Field';
 import { ProjectionChart } from './ProjectionChart';
 import { StatGrid, StatTile } from './StatTile';
-import { useScenarioWorkspace } from '../hooks/useScenarioWorkspace';
+import {
+  FACTORY_WORKSPACE,
+  useScenarioWorkspace,
+} from '../hooks/useScenarioWorkspace';
+import { saveWorkspaceAction } from '@/app/(admin)/unit-economics/actions';
+import { date as fmtDate } from '../format';
 import {
   groupDigits,
   months as fmtMonths,
@@ -43,6 +49,7 @@ import {
 import type {
   MarketComparisonRow,
   PlanComparisonRow,
+  SavedWorkspace,
 } from '@/application/use-cases';
 
 const JURISDICTION_OPTIONS = Object.values(JURISDICTIONS).map((j) => ({
@@ -65,9 +72,46 @@ const BILLING_OPTIONS: readonly { value: BillingPeriod; label: string }[] = [
   { value: 'annual', label: 'Год вперёд' },
 ];
 
-export function UnitEconomicsWorkbench() {
-  const { scenario, setScenario, select, reset, resetAll, configuredCount } =
-    useScenarioWorkspace();
+export function UnitEconomicsWorkbench({
+  saved,
+}: {
+  readonly saved: SavedWorkspace;
+}) {
+  const {
+    workspace,
+    scenario,
+    setScenario,
+    select,
+    reset,
+    revertTo,
+    configuredCount,
+  } = useScenarioWorkspace(saved.workspace);
+
+  // Что сейчас лежит на сервере. Обновляется после удачного сохранения, чтобы
+  // подпись и состояние кнопки не расходились с правдой до перезагрузки.
+  const [baseline, setBaseline] = useState<SavedWorkspace>(saved);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
+
+  const serverWorkspace = baseline.workspace ?? FACTORY_WORKSPACE;
+  const dirty =
+    workspaceFingerprint(workspace) !== workspaceFingerprint(serverWorkspace);
+
+  const save = () =>
+    startSaving(async () => {
+      const result = await saveWorkspaceAction(workspace);
+      if (result.ok) {
+        setBaseline(result.saved);
+        setError(null);
+      } else {
+        setError(result.error);
+      }
+    });
+
+  const revert = () => {
+    revertTo(serverWorkspace);
+    setError(null);
+  };
 
   const report = useMemo(() => buildUnitEconomicsReport(scenario), [scenario]);
   const comparison = useMemo(
@@ -289,18 +333,31 @@ export function UnitEconomicsWorkbench() {
         </FieldGroup>
 
         <div className="rail-footer">
-          <span className="rail-state">
-            Настройки помнятся отдельно для каждой пары «рынок × тариф» и
-            переживают перезагрузку. Настроено комбинаций: {configuredCount}.
-          </span>
           <div className="rail-actions">
-            <button type="button" className="ghost" onClick={reset}>
+            <button type="button" onClick={save} disabled={saving || !dirty}>
+              {saving ? 'Сохраняю…' : 'Сохранить'}
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              onClick={revert}
+              disabled={saving || !dirty}
+            >
+              Отменить
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              onClick={reset}
+              disabled={saving}
+            >
               Сбросить рынок
             </button>
-            <button type="button" className="ghost" onClick={resetAll}>
-              Всё
-            </button>
           </div>
+          <span className="rail-state" data-tone={dirty ? 'warn' : 'calm'}>
+            {saveHint(baseline, dirty, configuredCount)}
+          </span>
+          {error && <span className="rail-error">{error}</span>}
         </div>
       </aside>
 
@@ -469,6 +526,31 @@ export function UnitEconomicsWorkbench() {
     </div>
   );
 }
+
+/**
+ * Подпись у кнопки отвечает на один вопрос: то, что я вижу, увидит ли другой
+ * человек в другом браузере. Отсюда и упор на «сохранено» против «только здесь».
+ */
+function saveHint(
+  baseline: SavedWorkspace,
+  dirty: boolean,
+  configuredCount: number,
+): string {
+  const combos = `Настроено комбинаций: ${configuredCount}.`;
+
+  if (dirty) {
+    return baseline.updatedAt
+      ? `Изменения есть только в этом браузере. На сервере — версия от ${fmtDate(baseline.updatedAt)}${by(baseline)}. ${combos}`
+      : `Изменения есть только в этом браузере: на сервере настройки ещё не сохраняли. ${combos}`;
+  }
+
+  return baseline.updatedAt
+    ? `Сохранено на сервере ${fmtDate(baseline.updatedAt)}${by(baseline)} — это видят все админы. ${combos}`
+    : `Заводские ориентиры. Нажмите «Сохранить», чтобы они стали общими. ${combos}`;
+}
+
+const by = (baseline: SavedWorkspace): string =>
+  baseline.updatedByEmail ? `, ${baseline.updatedByEmail}` : '';
 
 const planColumns: readonly Column<PlanComparisonRow>[] = [
   {

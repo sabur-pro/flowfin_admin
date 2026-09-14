@@ -46,6 +46,7 @@ export {
   scenarioKey,
   switchTo,
   updateActive,
+  workspaceFingerprint,
 } from './workspace';
 export type { ScenarioKey, ScenarioTarget, Workspace } from './workspace';
 

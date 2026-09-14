@@ -104,3 +104,27 @@ function carryOver(from: Scenario, to: Scenario): Scenario {
     },
   };
 }
+
+/**
+ * Отпечаток настроек для сравнения «то же самое или уже поменяли». Ключи
+ * сортируются, потому что порядок вставки у пришедшего с сервера набора свой,
+ * а activeKey не учитывается: переключить рынок — это посмотреть, а не
+ * изменить, и кнопка «Сохранить» от такого загораться не должна.
+ */
+export function workspaceFingerprint(workspace: Workspace): string {
+  const entries = Object.keys(workspace.scenarios)
+    .sort()
+    .map((key) => [key, stable(workspace.scenarios[key])]);
+  return JSON.stringify(entries);
+}
+
+/** JSON с предсказуемым порядком полей на любой глубине. */
+function stable(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stable);
+  if (value === null || typeof value !== 'object') return value;
+
+  const source = value as Record<string, unknown>;
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(source).sort()) sorted[key] = stable(source[key]);
+  return sorted;
+}

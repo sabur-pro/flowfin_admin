@@ -9,3 +9,5 @@ export type { Dashboard } from './load-dashboard';
 export { listUsers, pageCount, USERS_PER_PAGE } from './list-users';
 export { signInAdmin } from './sign-in-admin';
 export type { SignInError } from './sign-in-admin';
+export { loadSavedWorkspace, saveWorkspace } from './unit-economics-settings';
+export type { SavedWorkspace } from './unit-economics-settings';

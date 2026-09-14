@@ -1,5 +1,7 @@
 export type {
   AdminGateway,
+  AdminSettingKey,
+  AdminSettingRecord,
   ListUsersQuery,
   Page,
   UserFilter,

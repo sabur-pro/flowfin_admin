@@ -774,3 +774,23 @@ button.ghost {
   display: flex;
   gap: 6px;
 }
+
+.rail-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.rail-actions {
+  flex-wrap: wrap;
+}
+
+.rail-state[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.rail-error {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--loss);
+}
