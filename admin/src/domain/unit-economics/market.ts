@@ -3,19 +3,12 @@ import type { PlanId } from './plan';
 
 export type MarketId = 'tajikistan' | 'cis' | 'europe' | 'usa' | 'gulf';
 
-/**
- * Кому продаём. Рынок задаёт налог с продажи, сидящий в цене, платёжеспособность
- * и то, сколько стоит привести оттуда платящего пользователя.
- */
 export interface Market {
   readonly id: MarketId;
   readonly name: string;
   readonly currency: string;
-  /** Сколько единиц местной валюты в долларе — только для отображения цен. */
   readonly unitsPerUsd: number;
-  /** НДС или его аналог, включённый в цену для потребителя. */
   readonly consumptionTaxRate: Rate;
-  /** Ориентир цены по тарифам, к которому привык рынок. Free везде нулевой. */
   readonly benchmark: { readonly plusUsd: Usd; readonly proUsd: Usd };
   readonly churnMonthly: Rate;
   readonly cacUsd: Usd;
@@ -86,12 +79,10 @@ export const MARKETS: Readonly<Record<MarketId, Market>> = {
   },
 };
 
-/** Цена в валюте рынка — только для подписи, расчёт всегда в долларах. */
 export function inLocalCurrency(market: Market, usd: Usd): number {
   return usd * market.unitsPerUsd;
 }
 
-/** Цена тарифа, к которой привык рынок. Free не стоит ничего по определению. */
 export function benchmarkPriceUsd(market: Market, planId: PlanId): Usd {
   switch (planId) {
     case 'free':

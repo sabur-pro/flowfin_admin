@@ -18,11 +18,7 @@ export function usdPrecise(value: number): string {
   return `${sign}$${Math.abs(value).toFixed(2)}`;
 }
 
-/**
- * Себестоимость живёт в долях цента: $0.004 за учётку, $0.00076 за разбор.
- * Обычные два знака превратили бы их в $0.00, поэтому под долларом показываем
- * три знака — ровно до той точности, которая в этих числах есть.
- */
+
 export function usdFine(value: number): string {
   const sign = value < 0 ? '−' : '';
   const abs = Math.abs(value);
@@ -67,7 +63,5 @@ export function date(iso: string | null): string {
 
 export function multiple(value: number): string {
   if (!Number.isFinite(value)) return '∞';
-  // Отрицательная кратность («−0.0×») не значит ничего: маржа ушла в минус,
-  // и привлечение не окупится ни за какой срок.
   return value > 0 ? `${value.toFixed(1)}×` : 'убыток';
 }

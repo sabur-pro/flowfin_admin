@@ -3,10 +3,7 @@ import { err, ok, type Result } from '@/domain/shared/result';
 
 export type SignInError = 'invalid-credentials' | 'not-an-admin' | 'unavailable';
 
-/**
- * Вход в админку. Успешная аутентификация — ещё не доступ: обычного
- * пользователя с верным паролем сюда пускать нельзя.
- */
+
 export async function signInAdmin(
   gateway: AuthGateway,
   email: string,
@@ -23,7 +20,6 @@ export async function signInAdmin(
   return signedIn.role === 'ADMIN' ? ok(signedIn) : err('not-an-admin');
 }
 
-/** 401 — неверный пароль, 409 — занятая сессия при отключённом force. */
 const CREDENTIAL_STATUSES = new Set([401, 409]);
 
 function isCredentialProblem(cause: unknown): boolean {

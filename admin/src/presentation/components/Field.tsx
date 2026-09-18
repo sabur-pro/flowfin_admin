@@ -9,7 +9,6 @@ interface SliderFieldProps {
   readonly min: number;
   readonly max: number;
   readonly step: number;
-  /** Строка под ползунком: обычно во что настройка обходится в деньгах. */
   readonly hint?: string;
   readonly onChange: (value: number) => void;
 }

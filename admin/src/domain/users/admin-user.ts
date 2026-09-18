@@ -1,4 +1,3 @@
-/** Состояние доступа считает сервер: клиент не должен знать про даты триала. */
 export type AccessState = 'subscribed' | 'trial' | 'expired';
 
 export type UserRole = 'ADMIN' | 'USER';

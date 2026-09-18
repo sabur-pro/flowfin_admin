@@ -7,10 +7,6 @@ interface Segment {
   readonly value: number;
 }
 
-/**
- * Разложение месячного чека. Слагаемые в сумме дают ровно gross, поэтому
- * ширины считаются от него, а не нормализуются задним числом.
- */
 export function ContributionBar({
   economics,
 }: {
@@ -57,7 +53,6 @@ export function ContributionBar({
   );
 }
 
-/** Подпись себестоимости честно перечисляет то, что в тарифе действительно есть. */
 function costLabel(economics: SubscriberEconomics): string {
   const { aiUsd, syncUsd } = economics.variableCost;
   if (aiUsd > 0) return 'ИИ и сервер';

@@ -87,8 +87,6 @@ export function UnitEconomicsWorkbench({
     configuredCount,
   } = useScenarioWorkspace(saved.workspace);
 
-  // Что сейчас лежит на сервере. Обновляется после удачного сохранения, чтобы
-  // подпись и состояние кнопки не расходились с правдой до перезагрузки.
   const [baseline, setBaseline] = useState<SavedWorkspace>(saved);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
@@ -131,8 +129,7 @@ export function UnitEconomicsWorkbench({
     [setScenario],
   );
 
-  // Селекторы не пересобирают сценарий, а переходят к сценарию другой
-  // комбинации: настроенное для США остаётся у США, даже если сходить в Европу.
+
   const changeJurisdiction = (jurisdictionId: JurisdictionId) =>
     select({ jurisdictionId });
 
@@ -527,10 +524,6 @@ export function UnitEconomicsWorkbench({
   );
 }
 
-/**
- * Подпись у кнопки отвечает на один вопрос: то, что я вижу, увидит ли другой
- * человек в другом браузере. Отсюда и упор на «сохранено» против «только здесь».
- */
 function saveHint(
   baseline: SavedWorkspace,
   dirty: boolean,

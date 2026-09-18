@@ -7,11 +7,6 @@ export type SalesChannelId =
   | 'merchant-of-record'
   | 'alif';
 
-/**
- * Как канал берёт своё. Разница не косметическая: сторы удерживают процент
- * с суммы уже без НДС (налог они снимают и платят сами), а процессинг
- * прогоняет через себя весь чек вместе с налогом.
- */
 export type ChannelFee =
   | { readonly kind: 'revenue-share'; readonly rate: Rate }
   | { readonly kind: 'processor'; readonly rate: Rate; readonly fixedUsd: Usd };
@@ -20,7 +15,6 @@ export interface SalesChannel {
   readonly id: SalesChannelId;
   readonly name: string;
   readonly fee: ChannelFee;
-  /** Платит ли канал НДС за продавца. Влияет на комплаенс, не на деньги. */
   readonly remitsConsumptionTax: boolean;
   readonly note: string;
 }
@@ -63,7 +57,6 @@ export const SALES_CHANNELS: Readonly<Record<SalesChannelId, SalesChannel>> = {
   },
 };
 
-/** Сколько канал удержит с одного месячного платежа. */
 export function channelFeeFor(
   channel: SalesChannel,
   grossMonthlyUsd: Usd,

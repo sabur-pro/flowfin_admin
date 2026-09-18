@@ -11,7 +11,6 @@ export interface MonthlyResult {
   readonly contributionUsd: Usd;
   readonly marketingUsd: Usd;
   readonly fixedCostUsd: Usd;
-  /** Прибыль до налога. */
   readonly operatingProfitUsd: Usd;
   readonly taxUsd: Usd;
   readonly netProfitUsd: Usd;
@@ -34,23 +33,13 @@ export interface Projection {
   readonly years: readonly FiscalYear[];
   readonly cumulativeProfitUsd: Usd;
   readonly endingSubscribers: number;
-  /** Месяц, с которого операционная прибыль стала положительной. */
   readonly operatingBreakEvenMonth: MonthIndex | null;
-  /** Месяц, в котором вернулись все вложенные деньги. */
   readonly capitalRecoveryMonth: MonthIndex | null;
-  /** Самая глубокая точка накопленного минуса — размер потребности в деньгах. */
   readonly peakDrawdownUsd: Usd;
 }
 
 export const DEFAULT_HORIZON_MONTHS = 36;
 
-/**
- * Помесячная проекция на три года.
- *
- * Налог считается раз в год, а не размазывается по месяцам: сначала убытки
- * прошлых лет гасят прибыль текущего, затем из остатка вычитается необлагаемая
- * сумма, и только на то, что осталось, начисляется ставка.
- */
 export function project(
   scenario: Scenario,
   economics: SubscriberEconomics,
@@ -140,8 +129,7 @@ export function project(
 }
 
 function allowanceFor(scenario: Scenario): Usd {
-  // Необлагаемая сумма — свойство юрисдикции, но ставку в сценарии можно
-  // переопределить. Если её обнулили, льгота уже ни на что не влияет.
+
   if (scenario.corporateTaxRate <= 0) return 0;
   return JURISDICTIONS[scenario.jurisdictionId].taxFreeAllowanceUsd;
 }

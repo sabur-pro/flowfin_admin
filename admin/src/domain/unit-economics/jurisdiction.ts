@@ -3,21 +3,12 @@ import type { SalesChannelId } from './sales-channel';
 
 export type JurisdictionId = 'uae' | 'tajikistan';
 
-/**
- * Откуда продаём. Юрисдикция определяет налог на прибыль и то, какие каналы
- * вообще доступны: у таджикского юрлица нет мерчант-аккаунта в сторах, а
- * значит и продавать через них оно не может.
- */
 export interface Jurisdiction {
   readonly id: JurisdictionId;
   readonly name: string;
   readonly corporateTaxRate: Rate;
-  /** Прибыль, не облагаемая налогом за год. */
   readonly taxFreeAllowanceUsd: Usd;
-  /**
-   * Непустой список: юрисдикция без единого способа принять деньги не имеет
-   * смысла, поэтому это гарантия типа, а не проверка в рантайме.
-   */
+
   readonly channels: readonly [SalesChannelId, ...SalesChannelId[]];
   readonly restrictions: readonly string[];
 }

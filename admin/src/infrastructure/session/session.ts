@@ -14,10 +14,6 @@ export interface AdminSession {
 
 const MAX_AGE_SECONDS = 60 * 60 * 12;
 
-/**
- * Токен живёт в httpOnly-куке и не попадает в клиентский бандл: страницы
- * ходят в API на сервере. В localStorage его класть нельзя — это XSS-мишень.
- */
 export async function openSession(admin: SignedInAdmin): Promise<void> {
   const store = await cookies();
   store.set(env.sessionCookieName(), JSON.stringify(toSession(admin)), {

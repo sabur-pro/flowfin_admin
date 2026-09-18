@@ -3,13 +3,6 @@ import type { MarketId } from './market';
 import type { PlanId } from './plan';
 import { defaultScenario, type Scenario } from './scenario';
 
-/**
- * Настройки сценария осмысленны только внутри своей комбинации: CAC $40 —
- * это цена платящего в США, а не универсальное число, и переносить его на
- * Таджикистан нельзя. Поэтому сценарии живут по одному на комбинацию
- * «юрисдикция × рынок × тариф», а переключение селектора — это переход к
- * другому сценарию, а не пересборка текущего.
- */
 export type ScenarioKey = string;
 
 export interface Workspace {
@@ -33,7 +26,6 @@ export function createWorkspace(scenario: Scenario): Workspace {
   return { activeKey: keyOf(scenario), scenarios: { [keyOf(scenario)]: scenario } };
 }
 
-/** Инвариант: активный ключ всегда есть в словаре — его кладут все операции. */
 export function activeScenario(workspace: Workspace): Scenario {
   const scenario = workspace.scenarios[workspace.activeKey];
   if (!scenario) {
@@ -42,17 +34,11 @@ export function activeScenario(workspace: Workspace): Scenario {
   return scenario;
 }
 
-/** Правка ползунком: переписывает сценарий той комбинации, которой он принадлежит. */
 export function updateActive(workspace: Workspace, scenario: Scenario): Workspace {
   const key = keyOf(scenario);
   return { activeKey: key, scenarios: { ...workspace.scenarios, [key]: scenario } };
 }
 
-/**
- * Переход к другой комбинации. Сценарий, который там уже настраивали,
- * возвращается как был; впервые открытая комбинация берёт ориентиры своего
- * рынка. Текущий никуда не девается — он лежит под своим ключом.
- */
 export function switchTo(workspace: Workspace, target: ScenarioTarget): Workspace {
   const key = scenarioKey(target);
   if (key === workspace.activeKey) return workspace;
@@ -71,7 +57,6 @@ export function switchTo(workspace: Workspace, target: ScenarioTarget): Workspac
   };
 }
 
-/** Вернуть активную комбинацию к ориентирам её рынка, не трогая остальные. */
 export function resetActive(workspace: Workspace): Workspace {
   const current = activeScenario(workspace);
   const fresh = defaultScenario(
@@ -82,12 +67,6 @@ export function resetActive(workspace: Workspace): Workspace {
   return updateActive(workspace, carryOver(current, fresh));
 }
 
-/**
- * Часть настроек описывает не рынок, а саму компанию: аренда и зарплаты не
- * меняются от того, что вы посмотрели на Европу, и модель биллинга у продукта
- * одна на всех. Такие поля идут за вами при переключении, остальные —
- * цена, CAC, отток, налоги, канал — остаются свойством комбинации.
- */
 function carryOver(from: Scenario, to: Scenario): Scenario {
   return {
     ...to,
@@ -105,12 +84,6 @@ function carryOver(from: Scenario, to: Scenario): Scenario {
   };
 }
 
-/**
- * Отпечаток настроек для сравнения «то же самое или уже поменяли». Ключи
- * сортируются, потому что порядок вставки у пришедшего с сервера набора свой,
- * а activeKey не учитывается: переключить рынок — это посмотреть, а не
- * изменить, и кнопка «Сохранить» от такого загораться не должна.
- */
 export function workspaceFingerprint(workspace: Workspace): string {
   const entries = Object.keys(workspace.scenarios)
     .sort()
@@ -118,7 +91,6 @@ export function workspaceFingerprint(workspace: Workspace): string {
   return JSON.stringify(entries);
 }
 
-/** JSON с предсказуемым порядком полей на любой глубине. */
 function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);
   if (value === null || typeof value !== 'object') return value;

@@ -7,7 +7,6 @@ export interface Dashboard {
   readonly finance: FinanceSummary;
 }
 
-/** Главный экран: сводка по базе и по кассе за один заход. */
 export async function loadDashboard(
   gateway: AdminGateway,
   financeRangeDays = 90,

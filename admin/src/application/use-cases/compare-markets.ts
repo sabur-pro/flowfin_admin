@@ -18,14 +18,6 @@ export interface MarketComparisonRow {
   readonly report: UnitEconomicsReport;
 }
 
-/**
- * Один и тот же продукт на всех рынках сразу — так видно, что экономику
- * определяет не себестоимость, а цена, канал и стоимость привлечения.
- *
- * Цена берётся рыночная: сравнивать $9.99 в Таджикистане с $9.99 в США
- * бессмысленно, там разная платёжеспособность. Чтобы сравнить при одной цене,
- * передайте `fixedPriceUsd`.
- */
 export function compareMarkets(
   jurisdictionId: JurisdictionId,
   options: { readonly fixedPriceUsd?: number; readonly planId?: PlanId } = {},
@@ -40,10 +32,6 @@ export function compareMarkets(
   });
 }
 
-/**
- * Один рынок из всех доступных юрисдикций: показывает, во что обходится
- * продавать из Душанбе вместо Дубая.
- */
 export function compareJurisdictions(
   marketId: MarketId,
 ): readonly UnitEconomicsReport[] {

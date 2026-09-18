@@ -1,7 +1,4 @@
-/**
- * Явный результат вместо исключений на границах приложения: сценарии
- * возвращают его наружу, а UI решает, что показать. Домен исключения не бросает.
- */
+
 export type Result<T, E = string> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: E };

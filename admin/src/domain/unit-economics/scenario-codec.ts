@@ -5,11 +5,6 @@ import { SALES_CHANNELS, type SalesChannelId } from './sales-channel';
 import type { BillingPeriod, Scenario } from './scenario';
 import { keyOf, type Workspace } from './workspace';
 
-/**
- * Разбор рабочего набора: словарь сценариев по комбинациям плюс активная.
- * Запись, которая не соответствует собственному ключу, выбрасывается целиком —
- * такой сценарий подсунули бы не тому рынку, а это хуже потери настроек.
- */
 export function parseWorkspace(raw: unknown): Workspace | null {
   if (!isRecord(raw) || !isRecord(raw.scenarios)) return null;
 
@@ -25,11 +20,6 @@ export function parseWorkspace(raw: unknown): Workspace | null {
   return { activeKey, scenarios };
 }
 
-/**
- * Разбор сценария, пришедшего снаружи — из localStorage или ссылки. Данные
- * могли быть записаны прошлой версией модели, поэтому доверять им нельзя:
- * что угодно непонятное превращается в null, а вызывающий берёт дефолт.
- */
 export function parseScenario(raw: unknown): Scenario | null {
   if (!isRecord(raw)) return null;
 
@@ -40,8 +30,6 @@ export function parseScenario(raw: unknown): Scenario | null {
 
   if (!jurisdictionId || !marketId || !channelId || !planId) return null;
 
-  // Канал из другой юрисдикции — не «почти верный» сценарий, а рассинхрон
-  // модели: у таджикского юрлица не может быть App Store.
   if (!JURISDICTIONS[jurisdictionId].channels.includes(channelId)) return null;
 
   const pricing = isRecord(raw.pricing) ? raw.pricing : null;
@@ -79,7 +67,6 @@ export function parseScenario(raw: unknown): Scenario | null {
     return null;
   }
 
-  // Нулевой отток дал бы бесконечный срок жизни и деление на ноль в LTV.
   if (churnMonthly === null || churnMonthly <= 0) return null;
 
   return {
@@ -111,7 +98,6 @@ const num = (value: unknown): number | null =>
 const isBillingPeriod = (value: unknown): value is BillingPeriod =>
   value === 'monthly' || value === 'annual';
 
-/** Строка, которая действительно является ключом справочника. */
 function pick<T extends JurisdictionId | MarketId | SalesChannelId>(
   value: unknown,
   dictionary: Readonly<Record<T, unknown>>,

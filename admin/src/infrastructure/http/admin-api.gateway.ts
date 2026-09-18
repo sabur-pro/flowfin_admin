@@ -9,7 +9,6 @@ import type { FinanceSummary } from '@/domain/finance';
 import type { AdminUser, UserOverview } from '@/domain/users';
 import type { HttpClient } from './http-client';
 
-/** Реализация порта поверх FlowFin API. Ровно один способ достучаться до данных. */
 export class AdminApiGateway implements AdminGateway {
   constructor(private readonly http: HttpClient) {}
 

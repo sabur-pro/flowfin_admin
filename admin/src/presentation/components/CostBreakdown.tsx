@@ -12,11 +12,6 @@ interface CostBreakdownProps {
   readonly voiceRequestsPerDay: number;
 }
 
-/**
- * Во что обходится один подписчик. Смысл таблицы в том, чтобы расход на ИИ был
- * виден в деньгах, а не в запросах: «10 голосовых в день» ничего не говорит,
- * пока не сказано, что это $0.23 в месяц и сколько это от чека.
- */
 export function CostBreakdown({
   economics,
   plan,
@@ -92,12 +87,10 @@ export function CostBreakdown({
   );
 }
 
-/** Сколько стоил бы ИИ при текущей активности, будь он в тарифе. */
 function potentialAiUsd(voiceRequestsPerDay: number): number {
   return voiceRequestsPerDay * DAYS_PER_MONTH * DEFAULT_COST_MODEL.voiceRequestUsd;
 }
 
-/** Доли цента: $0.00076 в обычном формате превратился бы в $0.00. */
 function usdCents(value: number): string {
   return `${(value * 100).toFixed(3)}¢`;
 }

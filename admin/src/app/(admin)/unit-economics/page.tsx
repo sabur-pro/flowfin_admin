@@ -4,8 +4,6 @@ import { UnitEconomicsWorkbench } from '@/presentation/components/UnitEconomicsW
 
 export default async function UnitEconomicsPage() {
   const { gateway } = await requireAdminContext();
-  // Сохранённая модель приходит с сервера: новый браузер и новый админ
-  // открывают ту же картину, а не заводские ориентиры.
   const saved = await withSession(() => loadSavedWorkspace(gateway));
 
   return (

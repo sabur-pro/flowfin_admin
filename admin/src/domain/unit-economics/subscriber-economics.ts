@@ -9,26 +9,21 @@ import {
   type Scenario,
 } from './scenario';
 
-/** Разложение месячного чека одного подписчика. Слагаемые дают ровно gross. */
 export interface SubscriberEconomics {
   readonly grossUsd: Usd;
   readonly consumptionTaxUsd: Usd;
   readonly channelFeeUsd: Usd;
   readonly variableCostUsd: Usd;
-  /** Из чего сложилась себестоимость: учётка, синхронизация, ИИ. */
   readonly variableCost: VariableCost;
-  /** Что остаётся до маркетинга, постоянных расходов и налога на прибыль. */
   readonly contributionUsd: Usd;
   readonly contributionRate: Rate;
   readonly effectiveChurn: Rate;
   readonly expectedLifetimeMonths: number;
   readonly ltvUsd: Usd;
-  /** Бесконечность, если маржа неположительна: CAC не вернётся никогда. */
   readonly cacPaybackMonths: number;
   readonly ltvToCac: number;
 }
 
-/** Потолок ожидаемого срока жизни, чтобы LTV не улетал при низком оттоке. */
 const MAX_LIFETIME_MONTHS = 60;
 
 export function calculateSubscriberEconomics(
@@ -39,8 +34,6 @@ export function calculateSubscriberEconomics(
   const netOfTax = gross / (1 + scenario.consumptionTaxRate);
   const consumptionTax = gross - netOfTax;
 
-  // Бесплатный тариф не проходит через канал продаж: списывать не с чего,
-  // и фикс-комиссия процессинга не должна превращаться в фантомный расход.
   const channelFee =
     gross > 0
       ? channelFeeFor(

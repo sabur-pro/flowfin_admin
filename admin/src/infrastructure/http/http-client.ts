@@ -8,10 +8,6 @@ export interface HttpClientOptions {
 
 type Query = Record<string, string | number | undefined>;
 
-/**
- * Тонкая обёртка над fetch: заголовки, разбор ошибок API и сборка query.
- * Ничего не знает о доменных типах — их накладывает шлюз выше.
- */
 export class HttpClient {
   private readonly baseUrl: string;
   private readonly accessToken?: string;
@@ -45,7 +41,6 @@ export class HttpClient {
           : {}),
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      // Админка всегда показывает текущее состояние базы.
       cache: 'no-store',
     });
 

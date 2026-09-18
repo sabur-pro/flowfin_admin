@@ -1,8 +1,4 @@
-/**
- * Что входит в тариф. Себестоимость обслуживания зависит именно от этого:
- * без синхронизации сервер не хранит данные пользователя, без ИИ не уходит
- * ни одного запроса в Gemini.
- */
+
 export interface PlanFeatures {
   readonly cloudSync: boolean;
   readonly aiVoice: boolean;
@@ -13,7 +9,6 @@ export type PlanId = 'free' | 'plus' | 'pro';
 export interface Plan {
   readonly id: PlanId;
   readonly name: string;
-  /** Короткая подпись для селектора и таблиц. */
   readonly shortName: string;
   readonly features: PlanFeatures;
   readonly note: string;

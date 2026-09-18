@@ -5,10 +5,7 @@ const WIDTH = 720;
 const HEIGHT = 220;
 const PADDING = { top: 12, right: 12, bottom: 24, left: 62 };
 
-/**
- * Накопленная прибыль по месяцам. Область ниже нуля — деньги, которые в
- * проект ещё вложены; выше — уже вернувшиеся.
- */
+
 export function ProjectionChart({ projection }: { readonly projection: Projection }) {
   const values = projection.months.map((m) => m.cumulativeProfitUsd);
   const min = Math.min(0, ...values);

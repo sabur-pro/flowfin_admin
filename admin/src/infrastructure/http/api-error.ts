@@ -1,4 +1,3 @@
-/** Ошибка транспорта, а не домена: код нужен, чтобы отличить 401 от 500. */
 export class ApiError extends Error {
   constructor(
     readonly status: number,

@@ -12,10 +12,6 @@ export interface UnitEconomicsReport {
   readonly projection: Projection;
 }
 
-/**
- * Один сценарий целиком. Чистая функция: одинаково работает и на сервере при
- * рендере страницы, и в браузере, когда двигают ползунок.
- */
 export function buildUnitEconomicsReport(
   scenario: Scenario,
 ): UnitEconomicsReport {
