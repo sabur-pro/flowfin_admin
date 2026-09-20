@@ -6,6 +6,22 @@ import type { SalesChannelId } from './sales-channel';
 
 export type BillingPeriod = 'monthly' | 'annual';
 
+/**
+ * Горизонт расчёта. Три года — предел, дальше прогноз по оттоку и росту
+ * превращается в фантазию; один год честнее показывает, сколько денег нужно
+ * прямо сейчас, а не когда-нибудь.
+ */
+export type HorizonYears = 1 | 2 | 3;
+
+export const HORIZON_YEARS: readonly HorizonYears[] = [1, 2, 3];
+
+export const DEFAULT_HORIZON_YEARS: HorizonYears = 3;
+
+export const MONTHS_PER_YEAR = 12;
+
+export const isHorizonYears = (value: unknown): value is HorizonYears =>
+  value === 1 || value === 2 || value === 3;
+
 export interface Pricing {
   readonly monthlyPriceUsd: Usd;
   readonly billingPeriod: BillingPeriod;
@@ -26,6 +42,7 @@ export interface Growth {
 
 export interface Scenario {
   readonly jurisdictionId: JurisdictionId;
+  readonly horizonYears: HorizonYears;
   readonly marketId: MarketId;
   readonly channelId: SalesChannelId;
   readonly planId: PlanId;
@@ -37,17 +54,17 @@ export interface Scenario {
 }
 
 export function annualPriceUsd(pricing: Pricing): Usd {
-  return pricing.monthlyPriceUsd * 12 * (1 - pricing.annualDiscount);
+  return pricing.monthlyPriceUsd * MONTHS_PER_YEAR * (1 - pricing.annualDiscount);
 }
 
 export function grossMonthlyUsd(pricing: Pricing): Usd {
   return pricing.billingPeriod === 'annual'
-    ? annualPriceUsd(pricing) / 12
+    ? annualPriceUsd(pricing) / MONTHS_PER_YEAR
     : pricing.monthlyPriceUsd;
 }
 
 export function transactionsPerMonth(pricing: Pricing): number {
-  return pricing.billingPeriod === 'annual' ? 1 / 12 : 1;
+  return pricing.billingPeriod === 'annual' ? 1 / MONTHS_PER_YEAR : 1;
 }
 
 export function planFeatures(scenario: Scenario): PlanFeatures {
@@ -73,6 +90,7 @@ export function defaultScenario(
 
   return {
     jurisdictionId,
+    horizonYears: DEFAULT_HORIZON_YEARS,
     marketId,
     channelId: jurisdiction.channels[0],
     planId,

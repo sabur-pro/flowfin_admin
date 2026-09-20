@@ -1,3 +1,4 @@
+import type { AiUsageSummary } from '@/domain/ai';
 import type { FinanceSummary } from '@/domain/finance';
 import type { AdminUser, UserOverview } from '@/domain/users';
 
@@ -29,6 +30,7 @@ export interface AdminGateway {
   getOverview(): Promise<UserOverview>;
   listUsers(query: ListUsersQuery): Promise<Page<AdminUser>>;
   getFinanceSummary(days: number): Promise<FinanceSummary>;
+  getAiUsage(days: number): Promise<AiUsageSummary>;
   getSetting(key: AdminSettingKey): Promise<AdminSettingRecord>;
   saveSetting(key: AdminSettingKey, value: unknown): Promise<AdminSettingRecord>;
 }

@@ -5,6 +5,7 @@ import type {
   ListUsersQuery,
   Page,
 } from '@/application/ports';
+import type { AiUsageSummary } from '@/domain/ai';
 import type { FinanceSummary } from '@/domain/finance';
 import type { AdminUser, UserOverview } from '@/domain/users';
 import type { HttpClient } from './http-client';
@@ -27,6 +28,10 @@ export class AdminApiGateway implements AdminGateway {
 
   getFinanceSummary(days: number): Promise<FinanceSummary> {
     return this.http.get<FinanceSummary>('/api/admin/finance/summary', { days });
+  }
+
+  getAiUsage(days: number): Promise<AiUsageSummary> {
+    return this.http.get<AiUsageSummary>('/api/admin/ai/usage', { days });
   }
 
   getSetting(key: AdminSettingKey): Promise<AdminSettingRecord> {

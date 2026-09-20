@@ -23,7 +23,7 @@ export const MARKETS: Readonly<Record<MarketId, Market>> = {
     currency: 'TJS',
     unitsPerUsd: 11.5,
     consumptionTaxRate: 0,
-    benchmark: { plusUsd: 1.65, proUsd: 3.39 },
+    benchmark: { plusUsd: 1.99, proUsd: 3.99 },
     churnMonthly: 0.08,
     cacUsd: 2,
     voiceRequestsPerDay: 3,

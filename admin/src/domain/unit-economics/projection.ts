@@ -1,6 +1,6 @@
 import type { MonthIndex, Usd } from '../shared/types';
 import { JURISDICTIONS } from './jurisdiction';
-import type { Scenario } from './scenario';
+import { MONTHS_PER_YEAR, type Scenario } from './scenario';
 import type { SubscriberEconomics } from './subscriber-economics';
 
 export interface MonthlyResult {
@@ -40,10 +40,14 @@ export interface Projection {
 
 export const DEFAULT_HORIZON_MONTHS = 36;
 
+export function horizonMonthsOf(scenario: Scenario): number {
+  return scenario.horizonYears * MONTHS_PER_YEAR;
+}
+
 export function project(
   scenario: Scenario,
   economics: SubscriberEconomics,
-  horizonMonths: number = DEFAULT_HORIZON_MONTHS,
+  horizonMonths: number = horizonMonthsOf(scenario),
 ): Projection {
   const { growth } = scenario;
   const allowance = allowanceFor(scenario);

@@ -4,6 +4,7 @@ export { compareJurisdictions, compareMarkets } from './compare-markets';
 export type { MarketComparisonRow } from './compare-markets';
 export { comparePlans } from './compare-plans';
 export type { PlanComparisonRow } from './compare-plans';
+export { loadAiUsage } from './load-ai-usage';
 export { loadDashboard } from './load-dashboard';
 export type { Dashboard } from './load-dashboard';
 export { listUsers, pageCount, USERS_PER_PAGE } from './list-users';

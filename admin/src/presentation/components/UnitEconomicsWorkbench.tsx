@@ -7,16 +7,19 @@ import {
   comparePlans,
 } from '@/application/use-cases';
 import {
+  HORIZON_YEARS,
   JURISDICTIONS,
   MARKETS,
   PLANS,
   PLAN_IDS,
   SALES_CHANNELS,
   annualPriceUsd,
+  horizonMonthsOf,
   inLocalCurrency,
   voiceCostPerMonth,
   workspaceFingerprint,
   type BillingPeriod,
+  type HorizonYears,
   type JurisdictionId,
   type MarketId,
   type PlanId,
@@ -45,6 +48,7 @@ import {
   usdCompact,
   usdFine,
   usdPrecise,
+  yearsLabel,
 } from '../format';
 import type {
   MarketComparisonRow,
@@ -71,6 +75,16 @@ const BILLING_OPTIONS: readonly { value: BillingPeriod; label: string }[] = [
   { value: 'monthly', label: 'Помесячно' },
   { value: 'annual', label: 'Год вперёд' },
 ];
+
+/** Горизонт задаётся строкой: ToggleField работает со строковыми значениями. */
+const HORIZON_OPTIONS = HORIZON_YEARS.map((years) => ({
+  value: String(years),
+  label: years === 1 ? '1 год' : `${years} года`,
+}));
+
+/** Самая дорогая цена на ползунке. Шаг в доллар, хвост всегда .99. */
+const MIN_PRICE_USD = 0.99;
+const MAX_PRICE_USD = 24.99;
 
 export function UnitEconomicsWorkbench({
   saved,
@@ -142,6 +156,9 @@ export function UnitEconomicsWorkbench({
     label: SALES_CHANNELS[id].name,
   }));
 
+  const horizonMonths = horizonMonthsOf(scenario);
+  const horizonLabel = yearsLabel(scenario.horizonYears);
+
   const isFree = economics.grossUsd === 0;
   const voiceIfEnabled = voiceCostPerMonth(scenario.usage.voiceRequestsPerDay);
 
@@ -162,8 +179,8 @@ export function UnitEconomicsWorkbench({
             display={
               isFree ? 'бесплатно' : `$${scenario.pricing.monthlyPriceUsd.toFixed(2)}`
             }
-            min={0}
-            max={24.99}
+            min={MIN_PRICE_USD}
+            max={MAX_PRICE_USD}
             step={1}
             hint={
               isFree
@@ -282,6 +299,22 @@ export function UnitEconomicsWorkbench({
               patch({ usage: { ...scenario.usage, churnMonthly: value / 100 } })
             }
           />
+        </FieldGroup>
+
+        <FieldGroup title="Горизонт расчёта">
+          <ToggleField
+            label="На сколько считаем"
+            value={String(scenario.horizonYears)}
+            options={HORIZON_OPTIONS}
+            onChange={(value) =>
+              patch({ horizonYears: Number(value) as HorizonYears })
+            }
+          />
+          <p className="field-note">
+            Горизонт меняет только прогноз: маржа, LTV и окупаемость CAC от него
+            не зависят. Год показывает, сколько денег нужно сейчас; три — когда
+            вложенное возвращается. Выбор общий для всех рынков.
+          </p>
         </FieldGroup>
 
         <FieldGroup title="Рост и расходы">
@@ -403,9 +436,9 @@ export function UnitEconomicsWorkbench({
             }
           />
           <StatTile
-            label="Прибыль за 3 года"
+            label={`Прибыль за ${horizonLabel}`}
             value={usdCompact(projection.cumulativeProfitUsd)}
-            hint={`${groupDigits(projection.endingSubscribers)} активных к 36-му месяцу`}
+            hint={`${groupDigits(projection.endingSubscribers)} активных к ${horizonMonths}-му месяцу`}
             tone={projection.cumulativeProfitUsd >= 0 ? 'good' : 'loss'}
           />
         </StatGrid>
@@ -485,7 +518,7 @@ export function UnitEconomicsWorkbench({
           description={
             projection.capitalRecoveryMonth
               ? `Операционный плюс с ${projection.operatingBreakEvenMonth}-го месяца, вложенное возвращается на ${projection.capitalRecoveryMonth}-м. Пик просадки ${usdCompact(projection.peakDrawdownUsd)} — это и есть потребность в деньгах.`
-              : `За три года вложенное не возвращается. Пик просадки ${usdCompact(projection.peakDrawdownUsd)}.`
+              : `За ${horizonLabel} вложенное не возвращается. Пик просадки ${usdCompact(projection.peakDrawdownUsd)}.`
           }
         >
           <ProjectionChart projection={projection} />
@@ -512,7 +545,10 @@ export function UnitEconomicsWorkbench({
           </ul>
         </Card>
 
-        <Card title="P&L по годам">
+        <Card
+          title="P&L по годам"
+          description={`${horizonMonths} месяцев разложены по фискальным годам: налог на прибыль считается раз в год, убытки прошлых лет переносятся вперёд.`}
+        >
           <DataTable
             columns={yearColumns}
             rows={projection.years}

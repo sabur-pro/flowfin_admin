@@ -19,11 +19,15 @@ export { SALES_CHANNELS, channelFeeFor } from './sales-channel';
 export type { ChannelFee, SalesChannel, SalesChannelId } from './sales-channel';
 
 export {
+  DEFAULT_HORIZON_YEARS,
+  HORIZON_YEARS,
+  MONTHS_PER_YEAR,
   annualPriceUsd,
   defaultScenario,
   effectiveChurn,
   grossMonthlyUsd,
   isChannelAvailable,
+  isHorizonYears,
   planFeatures,
   transactionsPerMonth,
   withPlan,
@@ -31,6 +35,7 @@ export {
 export type {
   BillingPeriod,
   Growth,
+  HorizonYears,
   Pricing,
   Scenario,
   Usage,
@@ -53,5 +58,9 @@ export type { ScenarioKey, ScenarioTarget, Workspace } from './workspace';
 export { calculateSubscriberEconomics } from './subscriber-economics';
 export type { SubscriberEconomics } from './subscriber-economics';
 
-export { DEFAULT_HORIZON_MONTHS, project } from './projection';
+export {
+  DEFAULT_HORIZON_MONTHS,
+  horizonMonthsOf,
+  project,
+} from './projection';
 export type { FiscalYear, MonthlyResult, Projection } from './projection';

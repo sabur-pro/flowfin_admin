@@ -2,7 +2,12 @@ import { JURISDICTIONS, type JurisdictionId } from './jurisdiction';
 import { MARKETS, type MarketId } from './market';
 import { isPlanId } from './plan';
 import { SALES_CHANNELS, type SalesChannelId } from './sales-channel';
-import type { BillingPeriod, Scenario } from './scenario';
+import {
+  DEFAULT_HORIZON_YEARS,
+  isHorizonYears,
+  type BillingPeriod,
+  type Scenario,
+} from './scenario';
 import { keyOf, type Workspace } from './workspace';
 
 export function parseWorkspace(raw: unknown): Workspace | null {
@@ -71,6 +76,11 @@ export function parseScenario(raw: unknown): Scenario | null {
 
   return {
     jurisdictionId,
+    // Горизонт появился позже самой модели: у сохранённых раньше наборов его
+    // нет, и это не повод считать их испорченными — берём прежние три года.
+    horizonYears: isHorizonYears(raw.horizonYears)
+      ? raw.horizonYears
+      : DEFAULT_HORIZON_YEARS,
     marketId,
     channelId,
     planId,

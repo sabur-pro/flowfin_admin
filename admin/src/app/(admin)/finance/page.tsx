@@ -1,5 +1,7 @@
+import { loadAiUsage } from '@/application/use-cases';
 import { averagePaymentTjs, type FinanceSummary } from '@/domain/finance';
 import { requireAdminContext, withSession } from '@/infrastructure/container';
+import { AiSpendReport } from '@/presentation/components/AiSpendReport';
 import { Card } from '@/presentation/components/Card';
 import { DataTable, type Column } from '@/presentation/components/DataTable';
 import { StatGrid, StatTile } from '@/presentation/components/StatTile';
@@ -9,7 +11,12 @@ const RANGE_DAYS = 90;
 
 export default async function FinancePage() {
   const { gateway } = await requireAdminContext();
-  const finance = await withSession(() => gateway.getFinanceSummary(RANGE_DAYS));
+  const [finance, ai] = await withSession(() =>
+    Promise.all([
+      gateway.getFinanceSummary(RANGE_DAYS),
+      loadAiUsage(gateway, RANGE_DAYS),
+    ]),
+  );
 
   return (
     <>
@@ -70,6 +77,28 @@ export default async function FinancePage() {
           empty="За период не было успешных платежей"
         />
       </Card>
+
+      <h2 className="page-title">Расход на ИИ</h2>
+      <p className="page-lede">
+        Что реально ушло на Gemini за голосовой ввод. Google наружу ни суммы
+        счёта по ключу, ни остатка не отдаёт — поэтому считаем сами: в ответе на
+        каждый запрос приходит число токенов, оно пишется к нам вместе со
+        ставками модели на момент вызова. Со счётом Google это сходится с
+        точностью до округлений и бесплатной квоты, но выпиской из биллинга не
+        является.
+      </p>
+
+      {ai ? (
+        <AiSpendReport summary={ai} />
+      ) : (
+        <Card title="Расход на ИИ">
+          <p className="note">
+            Сервер не отдал отчёт по ИИ. Обычно это значит, что на нём ещё
+            старая версия API — без ручки <code>/api/admin/ai/usage</code> и
+            таблицы учёта вызовов.
+          </p>
+        </Card>
+      )}
     </>
   );
 }

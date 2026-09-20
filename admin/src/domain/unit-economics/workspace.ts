@@ -70,6 +70,9 @@ export function resetActive(workspace: Workspace): Workspace {
 function carryOver(from: Scenario, to: Scenario): Scenario {
   return {
     ...to,
+    // Горизонт — это про то, как человек смотрит на модель, а не про рынок:
+    // переключил рынок — смотрит на те же годы.
+    horizonYears: from.horizonYears,
     pricing: {
       ...to.pricing,
       billingPeriod: from.pricing.billingPeriod,
