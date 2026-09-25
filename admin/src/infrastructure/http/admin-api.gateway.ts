@@ -7,7 +7,13 @@ import type {
 } from '@/application/ports';
 import type { AiUsageSummary } from '@/domain/ai';
 import type { FinanceSummary } from '@/domain/finance';
-import type { AdminUser, UserOverview } from '@/domain/users';
+import type {
+  AdminUser,
+  AdminUserDetail,
+  AiLimitRequest,
+  AiLimitRequestStatus,
+  UserOverview,
+} from '@/domain/users';
 import type { HttpClient } from './http-client';
 
 export class AdminApiGateway implements AdminGateway {
@@ -24,6 +30,44 @@ export class AdminApiGateway implements AdminGateway {
       page: query.page,
       perPage: query.perPage,
     });
+  }
+
+  getUser(id: string): Promise<AdminUserDetail> {
+    return this.http.get<AdminUserDetail>(`/api/admin/users/${encodeURIComponent(id)}`);
+  }
+
+  async blockUser(id: string, reason: string | null): Promise<void> {
+    await this.http.post(`/api/admin/users/${encodeURIComponent(id)}/block`, {
+      reason: reason ?? undefined,
+    });
+  }
+
+  async unblockUser(id: string): Promise<void> {
+    await this.http.post(`/api/admin/users/${encodeURIComponent(id)}/unblock`, {});
+  }
+
+  async setAiLimit(id: string, limit: number | null): Promise<void> {
+    await this.http.post(`/api/admin/users/${encodeURIComponent(id)}/ai-limit`, {
+      limit,
+    });
+  }
+
+  listAiRequests(status?: AiLimitRequestStatus): Promise<readonly AiLimitRequest[]> {
+    return this.http.get<AiLimitRequest[]>('/api/admin/ai/limit-requests', { status });
+  }
+
+  async approveAiRequest(id: string): Promise<void> {
+    await this.http.post(
+      `/api/admin/ai/limit-requests/${encodeURIComponent(id)}/approve`,
+      {},
+    );
+  }
+
+  async rejectAiRequest(id: string): Promise<void> {
+    await this.http.post(
+      `/api/admin/ai/limit-requests/${encodeURIComponent(id)}/reject`,
+      {},
+    );
   }
 
   getFinanceSummary(days: number): Promise<FinanceSummary> {

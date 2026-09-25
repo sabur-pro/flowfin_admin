@@ -14,3 +14,11 @@ export function AccessBadge({ access }: { readonly access: AccessState }) {
     </span>
   );
 }
+
+export function BlockedBadge() {
+  return (
+    <span className="badge" data-tone="loss">
+      Заблокирован
+    </span>
+  );
+}

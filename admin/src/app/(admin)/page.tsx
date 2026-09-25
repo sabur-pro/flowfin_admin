@@ -36,6 +36,12 @@ export default async function OverviewPage() {
           hint={`${groupDigits(overview.access.expired)} с истёкшим доступом`}
         />
         <StatTile
+          label="Заявки на лимит ИИ"
+          value={groupDigits(overview.pendingAiRequests)}
+          hint={`${groupDigits(overview.blocked)} заблокировано`}
+          tone={overview.pendingAiRequests > 0 ? 'loss' : 'neutral'}
+        />
+        <StatTile
           label={`Касса за ${finance.rangeDays} дней`}
           value={tjs(finance.paid.amountTjs)}
           hint={`${groupDigits(finance.paid.count)} платежей, средний чек ${tjs(averagePaymentTjs(finance))}`}

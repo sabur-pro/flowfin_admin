@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { listUsers, pageCount } from '@/application/use-cases';
 import type { UserFilter } from '@/application/ports';
 import { requireAdminContext, withSession } from '@/infrastructure/container';
-import { AccessBadge } from '@/presentation/components/Badge';
+import { AccessBadge, BlockedBadge } from '@/presentation/components/Badge';
 import { Card } from '@/presentation/components/Card';
 import { DataTable, type Column } from '@/presentation/components/DataTable';
 import { date, groupDigits } from '@/presentation/format';
@@ -14,6 +14,7 @@ const FILTERS: readonly { value: UserFilter; label: string }[] = [
   { value: 'trial', label: 'В триале' },
   { value: 'expired', label: 'Доступ истёк' },
   { value: 'admins', label: 'Админы' },
+  { value: 'blocked', label: 'Заблокированные' },
 ];
 
 interface PageProps {
@@ -90,7 +91,9 @@ const userColumns: readonly Column<AdminUser>[] = [
     align: 'left',
     render: (user) => (
       <span className="cell-stack">
-        <strong>{user.email ?? 'без почты'}</strong>
+        <Link href={`/users/${user.id}`}>
+          <strong>{user.email ?? 'без почты'}</strong>
+        </Link>
         <small>{user.name ?? '—'}</small>
       </span>
     ),
@@ -99,7 +102,18 @@ const userColumns: readonly Column<AdminUser>[] = [
     key: 'access',
     header: 'Доступ',
     align: 'left',
-    render: (user) => <AccessBadge access={user.access} />,
+    render: (user) =>
+      user.isBlocked ? <BlockedBadge /> : <AccessBadge access={user.access} />,
+  },
+  {
+    key: 'ai',
+    header: 'ИИ сегодня',
+    render: (user) => (
+      <span title={user.aiLimitCustom ? 'Лимит выставлен лично' : 'Общий лимит'}>
+        {user.aiUsedToday} / {user.aiLimit}
+        {user.aiLimitCustom ? ' *' : ''}
+      </span>
+    ),
   },
   { key: 'plan', header: 'План', render: (user) => user.plan ?? '—' },
   {

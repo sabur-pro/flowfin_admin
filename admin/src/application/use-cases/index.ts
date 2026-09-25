@@ -12,3 +12,4 @@ export { signInAdmin } from './sign-in-admin';
 export type { SignInError } from './sign-in-admin';
 export { loadSavedWorkspace, saveWorkspace } from './unit-economics-settings';
 export type { SavedWorkspace } from './unit-economics-settings';
+export { blockUser, MAX_AI_LIMIT, parseAiLimit, setUserAiLimit } from './moderate-users';

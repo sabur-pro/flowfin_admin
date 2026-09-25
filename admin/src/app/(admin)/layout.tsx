@@ -6,12 +6,18 @@ import { logout } from './actions';
 const NAV = [
   { href: '/', label: 'Обзор' },
   { href: '/users', label: 'Пользователи' },
+  { href: '/ai-requests', label: 'Заявки ИИ' },
   { href: '/finance', label: 'Финансы' },
   { href: '/unit-economics', label: 'Юнит-экономика' },
 ] as const;
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const { session } = await requireAdminContext();
+  const { session, gateway } = await requireAdminContext();
+  // Счётчик в меню — удобство, а не повод ронять всю админку.
+  const pending = await gateway
+    .listAiRequests('PENDING')
+    .then((list) => list.length)
+    .catch(() => 0);
 
   return (
     <div className="shell">
@@ -24,6 +30,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           {NAV.map((item) => (
             <Link key={item.href} href={item.href}>
               {item.label}
+              {item.href === '/ai-requests' && pending > 0 && (
+                <span className="nav-count">{pending}</span>
+              )}
             </Link>
           ))}
         </nav>

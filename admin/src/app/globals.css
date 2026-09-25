@@ -819,3 +819,129 @@ button.ghost {
   background: var(--panel-sunk);
   font-size: 0.9em;
 }
+
+/* ── Модерация ───────────────────────────────────────────── */
+.badge[data-tone="loss"] {
+  color: var(--loss);
+}
+
+.nav-count {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--loss);
+  color: var(--panel);
+  font-size: var(--text-xs);
+  line-height: 18px;
+  text-align: center;
+}
+
+.crumbs {
+  margin: 0 0 8px;
+  font-size: var(--text-sm);
+}
+
+.crumbs a {
+  color: var(--ink-2);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius);
+  background: var(--panel);
+  font-size: var(--text-sm);
+}
+
+.notice[data-tone="good"] {
+  color: var(--good);
+}
+
+.notice[data-tone="loss"] {
+  color: var(--loss);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.facts dt {
+  color: var(--ink-3);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-form label,
+.stack-form label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.stack-form {
+  display: grid;
+  gap: 12px;
+  max-width: 480px;
+  justify-items: start;
+}
+
+.stack-form label {
+  justify-self: stretch;
+}
+
+input[type="number"],
+textarea {
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--panel);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+input[type="number"] {
+  width: 140px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.form-hint {
+  margin: 12px 0 0;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--chrome);
+}
+
+.button-danger {
+  border-color: var(--loss);
+  background: var(--loss);
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
